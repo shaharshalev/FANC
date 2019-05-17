@@ -1,0 +1,94 @@
+%{
+	#include "attributes.h"
+	#include <iostream>
+	#include <stdlib.h>
+	#include "funC.hpp"
+	using namespace std;
+
+	extern int yylex();
+%}
+
+%token tklp tkrp
+%token<constVal> tkconst
+%left tkor
+%left tkand
+
+%type<exp> Exp
+
+%%
+
+Program	:	Funcs	{}
+;
+
+Funcs: /*epsilon*/ {}
+	| FuncDecl Funcs	{} 
+	| RetType ID LPAREN Formals RPAREN PreConditions LBRACE Statements RBRACE {}
+;
+
+RetType:	Type {}
+	|		VOID {}
+;
+
+Formals:	/*epsilon*/ {}
+	|	FormalsList {}
+;
+
+FormalsList:	FormalDecl	{}
+	|	FormalDecl	COMMA FormalsList {}
+;
+
+FormalDecl:	Type ID {}
+;
+
+PreConditions:	/*epsilon*/ {}
+	|	PreConditions PreConditions {}
+;
+
+PreCondition:	PRECOND LPAREN Exp RPAREN {}
+;
+
+Statements: Statement	{}
+	|	Statements Statement {}
+;
+
+Statement: LBRACE Statements RBRACE	{}
+	|	Type ID	SC	{}
+	|	Type ID ASSIGN Exp SC	{}
+	|	ID ASSIGN Exp SC	{}
+	|	Call SC	{}
+	|	RETURN SC	{}
+	|	RETURN Exp SC	{}
+	|	IF LPAREN Exp RPAREN Statement	{}
+	|	IF LPAREN Exp RPAREN Statement	{}
+	|	WHILE LPAREN Exp RPAREN Statement	{}
+	|	BREAK SC	{}
+	|	CONTINTUE SC	{}
+;
+
+Call:	ID LPAREN ExpList RPAREN	{}
+	|	ID LPAREN RPAREN	{}
+;
+
+ExpList: Exp	{}
+	|	Exp COMMA ExpList	{}
+;
+
+Exp:	LPAREN Exp RPAREN	{}
+	|	Exp BINOP Exp	{}
+;
+
+
+S	:	Exp
+		{
+			cout<<"The expression's value is "<<$1.value<<endl;
+		}
+	;
+
+
+
+%%
+
+int main()
+{
+	yyparse();
+}
