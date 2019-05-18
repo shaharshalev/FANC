@@ -1,36 +1,4 @@
 #ifndef _FANC_H_
 #define _FANC_H_
-enum tokens{
-VOID,
-INT,
-BYTE,
-B,
-BOOL,
-AND,
-OR,
-NOT,
-TRUE,
-FALSE,
-RETURN,
-IF,
-ELSE,
-WHILE,
-BREAK,
-CONTINUE,
-PRECOND,
-SC,
-COMMA,
-LPAREN,
-RPAREN,
-LBRACE,
-RBRACE,
-ASSIGN,
-RELOP,
-BINOP,
-ID,
-NUM,
-STRING,
-NUM_OF_TOKENS
-};
 
 #endif //_FANC_H_

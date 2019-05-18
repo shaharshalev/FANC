@@ -14,12 +14,39 @@
 	int yyerror(char * message);
 %}
 
-%token tklp tkrp
-%token<constVal> tkconst
-%left tkor
-%left tkand
+%left ASSIGN
+%token VOID
+%token INT
+%token BYTE
+%token B
+%token BOOL
+%left NOT
+%token TRUE
+%token FALSE
+%token RETURN
+%token IF
+%left ELSE
+%token WHILE
+%token BREAK
+%token CONTINUE
+%token PRECOND
+%token SC
+%token COMMA
+%token LBRACE
+%token RBRACE
+%token ID
+%token NUM
+%token STRING
+%left OR
+%left AND
+%left EQUALITY
+%left RELATIONAL
+%left ADDITIVE 
+%left MULTIPLICATIVE 
+%token LPAREN
+%token RPAREN
 
-%type<exp> Exp	
+
 
 %%
 
@@ -80,15 +107,24 @@ ExpList: Exp	{}
 ;
 
 Exp:	LPAREN Exp RPAREN	{}
-	|	Exp BINOP Exp	{}
+	|	Exp Binop Exp	{}
+	|	ID		{}
+	|	Call	{}
+	|	NUM B	{}
+	|	NUM		{}
+	|	STRING	{}
+	|	TRUE	{}
+	|	FALSE	{}
+	|	NOT Exp	{}
+	|	Exp AND Exp	{}
+	|	EXP RELOP EXP {}
+;
+
+Binop:	MULTIPLICATIVE	{}
+	|	ADDITIVE	{}
 ;
 
 
-S	:	Exp
-		{
-			cout<<"The expression's value is "<<$1.value<<endl;
-		}
-	;
 
 
 
