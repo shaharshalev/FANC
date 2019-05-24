@@ -51,7 +51,7 @@ whitespace 			([\x20\x09\x0A\x0D])
 "}"									{return RBRACE;}
 "="									{return ASSIGN;}
 (<|>|<=|>=)                         {return RELATIONAL;}
-(=|!=)              				{return EQUALITY;}
+(==|!=)              				{return EQUALITY;}
 (\*|\/)                             {return MULTIPLICATIVE;}
 (\+|-)					        	{return ADDITIVE;}
 [a-zA-Z][a-zA-Z0-9]*				{return ID;}
