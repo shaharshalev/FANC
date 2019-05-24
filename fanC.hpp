@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 using namespace std;
+vector<Scope*> table;
+vector<int> offsets;
 
 class Node{};
 
