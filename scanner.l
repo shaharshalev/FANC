@@ -50,14 +50,16 @@ whitespace 			([\x20\x09\x0A\x0D])
 "{"									{return LBRACE;}
 "}"									{return RBRACE;}
 "="									{return ASSIGN;}
-(=|!=|<|>|<=|>=)					{return RELOP;}
-(\+|-|\*|\/)						{return BINOP;}
+(<|>|<=|>=)                         {return RELATIONAL;}
+(=|!=)              				{return EQUALITY;}
+(\*|\/)                             {return MULTIPLICATIVE;}
+(\+|-)					        	{return ADDITIVE;}
 [a-zA-Z][a-zA-Z0-9]*				{return ID;}
 (0|[1-9][0-9]*)						{return NUM;}
 \"([^\n\r\"\\]|\\[rnt"\\])+\"		{return STRING;}
 {whitespace}						;
 <<EOF>>								;
-.									errorLex(yylineno);
+.									{errorLex(yylineno); exit(0);}
 
 
 

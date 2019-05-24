@@ -25,10 +25,11 @@
 %token FALSE
 %token RETURN
 %token IF
+%nonassoc IFPREC
 %left ELSE
 %token WHILE
 %token BREAK
-%token CONTINUE
+%token CONTINTUE
 %token PRECOND
 %token SC
 %token COMMA
@@ -47,7 +48,6 @@
 %token RPAREN
 
 
-
 %%
 
 Program:	Funcs	{}
@@ -55,7 +55,9 @@ Program:	Funcs	{}
 
 Funcs: /*epsilon*/ {}
 	| FuncDecl Funcs	{} 
-	| RetType ID LPAREN Formals RPAREN PreConditions LBRACE Statements RBRACE {}
+;
+
+FuncDecl:	RetType ID LPAREN Formals RPAREN PreConditions LBRACE Statements RBRACE {}
 ;
 
 RetType:	Type {}
@@ -74,7 +76,7 @@ FormalDecl:	Type ID {}
 ;
 
 PreConditions:	/*epsilon*/ {}
-	|	PreConditions PreConditions {}
+	|	PreConditions PreCondition {}
 ;
 
 PreCondition:	PRECOND LPAREN Exp RPAREN {}
@@ -91,8 +93,8 @@ Statement: LBRACE Statements RBRACE	{}
 	|	Call SC	{}
 	|	RETURN SC	{}
 	|	RETURN Exp SC	{}
-	|	IF LPAREN Exp RPAREN Statement	{}
-	|	IF LPAREN Exp RPAREN Statement	{}
+	|	IF LPAREN Exp RPAREN Statement ELSE Statement 	{}
+	|	IF LPAREN Exp RPAREN Statement %prec IFPREC {}
 	|	WHILE LPAREN Exp RPAREN Statement	{}
 	|	BREAK SC	{}
 	|	CONTINTUE SC	{}
@@ -106,8 +108,14 @@ ExpList: Exp	{}
 	|	Exp COMMA ExpList	{}
 ;
 
+Type: INT	{}
+	| BYTE	{}
+	| BOOL	{}
+;
+
 Exp:	LPAREN Exp RPAREN	{}
-	|	Exp Binop Exp	{}
+	|	Exp MULTIPLICATIVE Exp	{}
+	|	Exp ADDITIVE Exp	{}
 	|	ID		{}
 	|	Call	{}
 	|	NUM B	{}
@@ -117,12 +125,14 @@ Exp:	LPAREN Exp RPAREN	{}
 	|	FALSE	{}
 	|	NOT Exp	{}
 	|	Exp AND Exp	{}
-	|	EXP RELOP EXP {}
+	|	Exp OR Exp	{}
+	|	Exp RELATIONAL Exp {}
+	|	Exp EQUALITY Exp {}
 ;
 
-Binop:	MULTIPLICATIVE	{}
-	|	ADDITIVE	{}
-;
+
+
+
 
 
 
@@ -131,7 +141,7 @@ Binop:	MULTIPLICATIVE	{}
 %%
 
 int main(){
-	//yydebug=1 // uncomment this inorder to debug
+	yydebug=1 // uncomment this inorder to debug
 	yyparse();
 }
 int yyerror(char * message){
