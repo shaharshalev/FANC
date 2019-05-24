@@ -19,15 +19,11 @@ class Type : ReturnType{ //  TODO: Abstract class
 
 class IntType : Type{};
 
-class ByteType : Type
-{
-};
-class BooleanType : Type
-{
-};
+class ByteType : Type{};
 
-class BinaryExpression : Expression
-{
+class BooleanType : Type{};
+
+class BinaryExpression : Expression{
 public:
     Expression leftExp;
     Expression rightExp;
@@ -50,9 +46,7 @@ class Relop : Operation{};
 
 class BooleanOperation : Operation{};
 
-class Boolean : UnaryExpression
-{
-};
+class Boolean : UnaryExpression{};
 
 class ID : UnaryExpression{
 public:
@@ -71,8 +65,7 @@ public:
     string value;
 };
 
-class Number : UnaryExpression{
-};
+class Number : UnaryExpression{};
 
 class FormalDec{
 public:
