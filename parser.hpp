@@ -14,8 +14,10 @@ using namespace output;
 extern int yylineno;
 
 enum BoolOp{And,Or};
+enum WhileOp{Break,Continue};
 class Relop;
 class BooleanOperation;
+
 
 
 class Node{
@@ -33,6 +35,8 @@ public:
     virtual ~Type(){}
 };
 
+
+
 class Expression : public Node{
 public:
     ReturnType* type;
@@ -45,6 +49,7 @@ public:
 
 class Void : public ReturnType{
 public:
+
     virtual ~Void(){
     }
 };
@@ -180,21 +185,7 @@ public:
     virtual ~Id(){}
 };
 
-class Call : public UnaryExpression{
-public:
-    Id id;
-    ReturnType* returnType;
-    vector< Expression* > expressions;
-    Call(ReturnType* _returnType,Id _id,vector< Expression* > _expressions)
-    :UnaryExpression(_returnType),returnType(_returnType),id(_id),expressions(_expressions){}
 
-    virtual ~Call(){
-        for(vector<Expression*>::iterator it = expressions.begin(); it!= expressions.end();++it){
-            delete *it;
-        }
-        delete returnType;
-    }
-};
 
 class String : public UnaryExpression{
 public:
@@ -241,7 +232,8 @@ public:
 class FormalDec : public Node{
 public:
     Type* type;
-    Id id;
+    Id* id;
+    FormalDec(Type* _type,Id* _id):type(_type),id(_id){}
 
     virtual ~FormalDec(){
         delete type;
@@ -252,8 +244,17 @@ public:
 
 class FormalList : public Node {
 public:
-    vector<FormalDec> declerations;
+    vector<FormalDec*> declerations;
 
+    FormalList(){}
+
+    FormalList(FormalDec* formalDec){
+        add(formalDec);
+    }
+    FormalList* add(FormalDec* formalDec){
+        declerations.insert(declerations.begin(),formalDec);
+        return this;
+    }
     virtual ~FormalList(){}
 };
 
@@ -270,9 +271,19 @@ public:
 
 class PreConditions : public Node {
 public:
-    vector<PreCondition> preconditions;
+    vector<PreCondition*> preconditions;
 
-    virtual ~PreConditions(){}
+    PreConditions(){}
+    PreConditions* add(PreCondition* precond){
+        preconditions.insert(preconditions.begin(),precond);
+        return this;
+    }
+
+    virtual ~PreConditions(){
+        for(vector<PreCondition*>::iterator it = preconditions.begin(); it!= preconditions.end();++it){
+            delete *it;
+        }
+    }
 };
 
 class FuncDec : public Node {
@@ -283,6 +294,42 @@ class FuncDec : public Node {
 
     virtual ~FuncDec(){
         delete returnType;
+    }
+};
+
+class ExpressionList:public Node{
+public:
+    vector<Expression*> expressions;
+
+    ExpressionList(){}
+
+    ExpressionList(Expression* exp){
+        expressions.insert(expressions.begin(),exp);
+    }
+
+    ExpressionList* add(Expression* exp){
+        expressions.insert(expressions.begin(),exp);
+        return this;
+    }
+    virtual ~ExpressionList(){
+        for(vector<Expression*>::iterator it = expressions.begin(); it!= expressions.end();++it){
+            delete *it;
+        }
+    }
+};
+
+class Call : public UnaryExpression{
+public:
+    Id* id;
+    ReturnType* returnType;
+    ExpressionList* expressions;
+    Call(ReturnType* _returnType,Id* _id,ExpressionList* _expressions)
+            :UnaryExpression(_returnType),returnType(_returnType),id(_id),expressions(_expressions){}
+
+    virtual ~Call(){
+        delete returnType;
+        delete expressions;
+        delete id;
     }
 };
 
@@ -310,7 +357,6 @@ class FunctionScope: public Scope {
 public:
     void endScope(){}
 };
-
 
 
 #endif //_PARSER_H

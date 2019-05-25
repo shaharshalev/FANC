@@ -8,9 +8,18 @@
 	extern int yylineno;
 	int yyerror(const char * message);
 	int yylex();
+	void handleWhile(Expression* exp);
+	void validateExpIsBool(Expression* exp);
+	void validateWhile(WhileOp op);
+    bool inWhile();
+    void validateFunctionReturnType(Expression* exp);
+    void validateCall(Call* call);
+    void validateAssignment(Id* id,Expression* exp);
+    void insertVarToTable(Type* type,Id* id);
 
 	vector<Scope*> table;
 	vector<int> offsets;
+	FuncDec* currentFunction=NULL;
 %}
 
 %left ASSIGN
@@ -39,8 +48,8 @@
 %token STRING
 %left OR
 %left AND
-%left EQUALITY
-%left RELATIONAL
+%nonassoc EQUALITY
+%nonassoc RELATIONAL
 %left ADDITIVE 
 %left MULTIPLICATIVE 
 %token LPAREN
@@ -59,83 +68,88 @@ Funcs: /*epsilon*/ {}
 FuncDecl:	RetType ID LPAREN Formals RPAREN PreConditions LBRACE OpenFunctionScope Statements RBRACE {}
 ;
 
-RetType:	Type {}
-	|		VOID {}
+RetType:	Type {$$ = $1;}
+	|		VOID {$$ = new Void();}
 ;
 
-Formals:	/*epsilon*/ {}
-	|	FormalsList {}
+Formals:	/*epsilon*/ {$$ = new FormalList();}
+	|	FormalsList {$$ = (FormalList*)$1;}
 ;
 
-FormalsList:	FormalDecl	{}
-	|	FormalDecl	COMMA FormalsList {}
+FormalsList:	FormalDecl	{$$=new FormalList((FormalDec*)$1);}
+	|	FormalDecl	COMMA FormalsList {$$=((FormalList*)$3)->add((FormalDec*)$1);}
 ;
 
-FormalDecl:	Type ID {}
+FormalDecl:	Type ID {$$=new FormalDec((Type*)$1,(Id*)$2);}
 ;
 
-PreConditions:	/*epsilon*/ {}
-	|	PreConditions PreCondition {}
+PreConditions:	/*epsilon*/ {$$=new PreConditions();}
+	|	PreConditions PreCondition {$$=((PreConditions*)$1)->add((PreCondition*)$2);}
 ;
 
-PreCondition:	PRECOND LPAREN Exp RPAREN {}
+PreCondition:	PRECOND LPAREN Exp RPAREN {validateExpIsBool((Expression*)$3); $$=new PreCondition((Expression*)$3);}
 ;
 
 Statements: Statement	{}
 	|	Statements Statement {}
 ;
 
-Statement: LBRACE OpenScope Statements RBRACE	{}
-	|	Type ID	SC	{}
-	|	Type ID ASSIGN Exp SC	{}
-	|	ID ASSIGN Exp SC	{}
-	|	Call SC	{}
-	|	RETURN SC	{}
-	|	RETURN Exp SC	{}
-	|	IF LPAREN Exp RPAREN OpenIfScope Statement ELSE EndScope OpenScope Statement 	{}
-	|	IF LPAREN Exp RPAREN OpenIfScope Statement %prec IFPREC {}
-	|	WHILE LPAREN Exp RPAREN OpenWhileScope Statement	{}
-	|	BREAK SC	{}
-	|	CONTINUE SC	{}
+Statement: LBRACE OpenScope Statements RBRACE	{/* close scope here :) */}
+	|	Type ID	SC	{insertVarToTable((Type*)$1,(Id*)$2);}
+	|	Type ID ASSIGN Exp SC	{insertVarToTable((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4);}
+	|	ID ASSIGN Exp SC	{validateAssignment((Id*)$1,(Expression*)$3);}
+	|	Call SC	{validateCall((Call*)$1);}
+	|	RETURN SC	{validateFunctionReturnType(NULL);}
+	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);}
+	|	IF LPAREN Exp RPAREN OpenIfScope Statement ELSE EndScope OpenScope Statement 	{validateExpIsBool((Expression*)$3);}
+	|	IF LPAREN Exp RPAREN OpenIfScope Statement %prec IFPREC {validateExpIsBool((Expression*)$3);}
+	|	WHILE LPAREN Exp RPAREN OpenWhileScope Statement	{handleWhile((Expression*)$3);}
+	|	BREAK SC	{validateWhile(Break);}
+	|	CONTINUE SC	{validateWhile(Continue);}
+;
+//todo: CHANGE RETURN TYPE TO REAL TYPE AFTER SEARCHING IN SYMBOL TABLE
+Call:	ID LPAREN ExpList RPAREN	{$$=new Call(new ReturnType(),((Id*)$1),((ExpressionList*)$3));}
+	|	ID LPAREN RPAREN	{$$=new Call(new ReturnType(),((Id*)$1),new ExpressionList());}
 ;
 
-Call:	ID LPAREN ExpList RPAREN	{}
-	|	ID LPAREN RPAREN	{}
+ExpList: Exp	{$$=new ExpressionList((Expression*)$1);}
+	|	Exp COMMA ExpList	{$$=((ExpressionList*)$3)->add((Expression*)$1);}
 ;
 
-ExpList: Exp	{}
-	|	Exp COMMA ExpList	{}
+Type: INT	{$$=new IntType();}
+	| BYTE	{$$=new ByteType();}
+	| BOOL	{$$=new BooleanType();}
 ;
 
-Type: INT	{}
-	| BYTE	{}
-	| BOOL	{}
-;
-
-Exp:	LPAREN Exp RPAREN	{$$ = $2}
-	|	Exp MULTIPLICATIVE Exp	{$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,(BinaryOperation*)$2)}
-	|	Exp ADDITIVE Exp	{$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,(BinaryOperation*)$2)}
-	|	ID		{$$ = (ID*)$1}
-	|	Call	{$$ = (Call*)$1}
+Exp:	LPAREN Exp RPAREN	{$$ = $2;}
+	|	Exp MULTIPLICATIVE Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(BinaryOperation*)$2);}
+	|	Exp ADDITIVE Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(BinaryOperation*)$2);}
+	|	ID		{$$ = (Id*)$1;}
+	|	Call	{$$ = (Call*)$1;}
 	|	NUM B	{$$ = new Byte((Number*)$1); }
 	|	NUM		{$$ = new Integer((Number*)$1); }
 	|	STRING	{$$ = (String*)$1;}
 	|	TRUE	{$$ = new Boolean(true);}
 	|	FALSE	{$$ = new Boolean(false);}
-	|	NOT Exp	{$$ = new Not((Expression*)$2)}
-	|	Exp AND Exp	{$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,new BooleanOperation(And))}
-	|	Exp OR Exp	{$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,new BooleanOperation(Or))}
-	|	Exp RELATIONAL Exp {$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,(Relop*)$2)}
-	|	Exp EQUALITY Exp {}
+	|	NOT Exp	{$$ = new Not((Expression*)$2);}
+	|	Exp AND Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,new BooleanOperation(And));}
+	|	Exp OR Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,new BooleanOperation(Or));}
+	|	Exp RELATIONAL Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);}
+	|	Exp EQUALITY Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);}
 ;
 
-OpenWhileScope: /*epsilon*/ {}
+OpenWhileScope: /*epsilon*/ {
+
+
+}
 ;
 
 OpenIfScope: /*epsilon*/ {}
 ;
 
-OpenFunctionScope: /*epsilon*/ {}
+OpenFunctionScope: /*epsilon*/ {
+
+}
 ;
 
 OpenScope: /*epsilon*/ {}
@@ -157,4 +171,53 @@ int main(){
 int yyerror(const char * message){
 	errorSyn(yylineno);
 	exit(1);
+}
+
+void validateWhile(WhileOp op){
+    if(inWhile()){
+        switch(op){
+            case Break:
+                errorUnexpectedBreak(yylineno);
+            break;
+            case Continue:
+                errorUnexpectedContinue(yylineno);
+            break;
+        }
+    }
+}
+void validateExpIsBool(Expression* exp){
+  if(!isInstanceOf<BooleanType>(exp)){
+       errorMismatch(yylineno);
+       exit(1);
+  }
+}
+
+void handleWhile(Expression* exp){
+
+ validateExpIsBool(exp);
+
+
+}
+bool inWhile(){
+    //TODO: check if we are in a while in a symbol table and return accordingly
+}
+
+void validateFunctionReturnType(Expression* exp){
+    //TODO: validate in symbol table that we are inside a function of the same Type of exp
+    // also make sure to delete it afterwards
+}
+
+void validateCall(Call* call){
+    //TODO: validate that call id exist in symbol type (errorUndefFunc)
+    // also make sure to delete it afterwards
+}
+
+void validateAssignment(Id* id,Expression* exp){
+    //TODO:
+    // 1. find the id in symbol table (if not exist errorUndef(lineno,id))
+    // 2. validate that exp type = id type
+}
+
+void insertVarToTable(Type* type,Id* id){
+    //TODO:insert to table the id with the new Type :)
 }
