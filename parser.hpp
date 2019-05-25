@@ -1,10 +1,12 @@
-#ifndef _FANC_H_
-#define _FANC_H_
+#ifndef _PARSER_H
+#define _PARSER_H
 #include <string>
 #include <iostream>
 #include <vector>
 #include "output.hpp"
+#include <typeinfo>
 #include <sstream>
+#include <stdlib.h>     /* atoi */
 #define YYSTYPE Node*
 using namespace std;
 using namespace output;
@@ -20,8 +22,8 @@ class Type : public ReturnType{
 
 class Expression : public Node{
 public:
-    Type type;
-    Expression(Type _type):type(_type){}
+    ReturnType type;
+    Expression(ReturnType _type):type(_type){}
 };
 
 class Void : public ReturnType{};
@@ -42,23 +44,24 @@ public:
     Expression rightExp;
     Operation op;
     BinaryExpression(Expression _leftExp, Expression _rightExp,Operation _op)
-    :Expression(Type()),leftExp(_leftExp),rightExp(_rightExp),op(_op){
-    if( "Relop"==typeid(op).name() ||"BooleanOperation"==typeid(op).name())
-    {
-        this->type=BooleanType();
-    }else{
-        //if they are not of the same type we should take the larger one
-        //(will always be int in our case)
-        if(leftExp.type!=right.type){
-            this->type=IntType();
-        }else{
-            this->type=leftExp.type;
+    :Expression(Type()),leftExp(_leftExp),rightExp(_rightExp),op(_op) {
+        if ("Relop" == typeid(op).name() || "BooleanOperation" == typeid(op).name()) {
+            this->type = BooleanType();
+        } else {
+            //if they are not of the same type we should take the larger one
+            //(will always be int in our case)
+            if (typeid(leftExp.type).name() != typeid(rightExp.type).name()) {
+                this->type = IntType();
+            } else {
+                this->type = leftExp.type;
+            }
         }
     }
 };
 
 class UnaryExpression : public Expression{
-     UnaryExpression(Type _type):Expression(_type){}
+public:
+    UnaryExpression(ReturnType _type):Expression(_type){}
 };
 
 
@@ -89,7 +92,7 @@ public:
 class BooleanOperation : public Operation{};
 
 class Boolean : public UnaryExpression{
-    Boolean():UnaryExpression(BooleanType())
+    Boolean():UnaryExpression(BooleanType()){}
 };
 
 class Id : public UnaryExpression{
@@ -106,7 +109,7 @@ public:
     ReturnType returnType;
     vector< Expression > expressions;
     Call(ReturnType _returnType,Id _id,vector< Expression > _expressions)
-    :UnaryExpression(_returnType),id(_id),_expressions)
+    :UnaryExpression(_returnType),returnType(_returnType),id(_id),expressions(_expressions){}
 };
 
 class String : public UnaryExpression{
@@ -119,7 +122,7 @@ class Number : public UnaryExpression{
 public:
     int value;
     Number(string text,Type _type):UnaryExpression(_type),value(atoi(text.c_str())){}
-    Number(int val,Type _type)::UnaryExpression(_type),value(val){}
+    Number(int val,Type _type):UnaryExpression(_type),value(val){}
 
 };
 
@@ -174,29 +177,28 @@ class FuncDec : public Node {
 class Scope{
 public:
     vector<Id> ids;
-    virtual void endScope();
+    virtual void endScope(){}
+
 
 };
 
 class IfScope: public Scope {
 public:
-    void endScope();
+    void endScope(){}
 
 };
 
 class WhileScope: public Scope {
 public:
-    void endScope();
+    void endScope(){}
 
 };
 
 class FunctionScope: public Scope {
 public:
-    void endScope();
-
+    void endScope(){}
 };
 
 
 
-
-#endif //FANC_H_
+#endif //_PARSER_H
