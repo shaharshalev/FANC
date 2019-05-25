@@ -5,10 +5,12 @@
 	#include <stdlib.h>
 	#include "parser.hpp"
 	#include "output.hpp"
-	using namespace std;
 	extern int yylineno;
 	int yyerror(const char * message);
 	int yylex();
+
+	vector<Scope*> table;
+	vector<int> offsets;
 %}
 
 %left ASSIGN
@@ -115,8 +117,8 @@ Exp:	LPAREN Exp RPAREN	{}
 	|	Exp ADDITIVE Exp	{}
 	|	ID		{}
 	|	Call	{}
-	|	NUM B	{}
-	|	NUM		{}
+	|	NUM B	{$$ = new Byte((Number*)$1); }
+	|	NUM		{$$ = new Integer((Number*)$1); }
 	|	STRING	{}
 	|	TRUE	{}
 	|	FALSE	{}

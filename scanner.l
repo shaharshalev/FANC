@@ -8,7 +8,7 @@
 #include "output.hpp"
 #include "parser.hpp"
 #include "parser.tab.hpp"
-
+#define YYSTYPE Node*
 %}
 
 %option yylineno
@@ -44,13 +44,13 @@ whitespace 			([\x20\x09\x0A\x0D])
 "{"									{return LBRACE;}
 "}"									{return RBRACE;}
 "="									{return ASSIGN;}
-(<|>|<=|>=)                         {return RELATIONAL;}
-(==|!=)              				{return EQUALITY;}
-(\*|\/)                             {return MULTIPLICATIVE;}
-(\+|-)					        	{return ADDITIVE;}
-[a-zA-Z][a-zA-Z0-9]*				{return ID;}
-(0|[1-9][0-9]*)						{return NUM;}
-\"([^\n\r\"\\]|\\[rnt"\\])+\"		{return STRING;}
+(<|>|<=|>=)                         {yylval = new Relop(yytext); return RELATIONAL;}
+(==|!=)              				{yylval = new Relop(yytext); return EQUALITY;}
+(\*|\/)                             {yylval = new Multiplicative(yytext); return MULTIPLICATIVE;}
+(\+|-)					        	{yylval = new Additive(yytext);return ADDITIVE;}
+[a-zA-Z][a-zA-Z0-9]*				{yylval = new Id(yytext); return ID;}
+(0|[1-9][0-9]*)						{yylval = new Number(yytext);return NUM;}
+\"([^\n\r\"\\]|\\[rnt"\\])+\"		{yylval = new String(yytext); return STRING;}
 {whitespace}						;
 <<EOF>>								;
 .									{errorLex(yylineno);exit(0);}
