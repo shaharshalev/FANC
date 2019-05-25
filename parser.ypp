@@ -119,10 +119,10 @@ Exp:	LPAREN Exp RPAREN	{}
 	|	Call	{}
 	|	NUM B	{$$ = new Byte((Number*)$1); }
 	|	NUM		{$$ = new Integer((Number*)$1); }
-	|	STRING	{}
-	|	TRUE	{}
-	|	FALSE	{}
-	|	NOT Exp	{}
+	|	STRING	{$$ = (String*)$1;}
+	|	TRUE	{$$ = new Boolean(true);}
+	|	FALSE	{$$ = new Boolean(false);}
+	|	NOT Exp	{$$ = new Not((Expression*)$2)}
 	|	Exp AND Exp	{}
 	|	Exp OR Exp	{}
 	|	Exp RELATIONAL Exp {}
