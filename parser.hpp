@@ -21,6 +21,7 @@ class Type : public ReturnType{
 class Expression : public Node{
 public:
     Type type;
+    Expression(Type _type):type(_type){}
 };
 
 class Void : public ReturnType{};
@@ -40,9 +41,25 @@ public:
     Expression leftExp;
     Expression rightExp;
     Operation op;
+    BinaryExpression(Expression _leftExp, Expression _rightExp,Operation _op)
+    :Expression(Type()),leftExp(_leftExp),rightExp(_rightExp),op(_op){
+    if( "Relop"==typeid(op).name() ||"BooleanOperation"==typeid(op).name())
+    {
+        this->type=BooleanType();
+    }else{
+        //if they are not of the same type we should take the larger one
+        //(will always be int in our case)
+        if(leftExp.type!=right.type){
+            this->type=IntType();
+        }else{
+            this->type=leftExp.type;
+        }
+    }
 };
 
-class UnaryExpression : public Expression{};
+class UnaryExpression : public Expression{
+     UnaryExpression(Type _type):Expression(_type){}
+};
 
 
 class BinaryOperation : public Operation{
@@ -71,14 +88,16 @@ public:
 
 class BooleanOperation : public Operation{};
 
-class Boolean : public UnaryExpression{};
+class Boolean : public UnaryExpression{
+    Boolean():UnaryExpression(BooleanType())
+};
 
 class Id : public UnaryExpression{
 public:
     string name;
     int offset;
 
-    Id(string text ):name(text){}
+    Id(string text ):UnaryExpression(Type()),name(text){}
 };
 
 class Call : public UnaryExpression{
@@ -86,33 +105,34 @@ public:
     Id id;
     ReturnType returnType;
     vector< Expression > expressions;
+    Call(ReturnType _returnType,Id _id,vector< Expression > _expressions)
+    :UnaryExpression(_returnType),id(_id),_expressions)
 };
 
 class String : public UnaryExpression{
 public:
     string value;
-
-    String(string text):value(text){}
+    String(string text):UnaryExpression(Type()),value(text){}
 };
 
 class Number : public UnaryExpression{
 public:
     int value;
-    Number(string text):value(atoi(text.c_str())){}
-    Number(int val):value(val){}
+    Number(string text,Type _type):UnaryExpression(_type),value(atoi(text.c_str())){}
+    Number(int val,Type _type)::UnaryExpression(_type),value(val){}
 
 };
 
 class Integer : public Number{
 public:
-    Integer(Number* n):Number(n->value){
+    Integer(Number* n):Number(n->value,IntType()){
         delete n;
     }
 };
 
 class Byte : public Number{
 public:
-    Byte(Number* num):Number(num->value){
+    Byte(Number* num):Number(num->value,ByteType()){
         delete num; //check
         if(value > 255){
             stringstream stream;
