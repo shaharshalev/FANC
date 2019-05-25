@@ -49,7 +49,7 @@ whitespace 			([\x20\x09\x0A\x0D])
 (\*|\/)                             {yylval = new Multiplicative(yytext); return MULTIPLICATIVE;}
 (\+|-)					        	{yylval = new Additive(yytext);return ADDITIVE;}
 [a-zA-Z][a-zA-Z0-9]*				{yylval = new Id(yytext); return ID;}
-(0|[1-9][0-9]*)						{yylval = new Number(yytext);return NUM;}
+(0|[1-9][0-9]*)						{yylval = new Number(yytext,new Type());return NUM;}
 \"([^\n\r\"\\]|\\[rnt"\\])+\"		{yylval = new String(yytext); return STRING;}
 {whitespace}						;
 <<EOF>>								;
