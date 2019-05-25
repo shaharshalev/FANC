@@ -112,20 +112,20 @@ Type: INT	{}
 	| BOOL	{}
 ;
 
-Exp:	LPAREN Exp RPAREN	{}
-	|	Exp MULTIPLICATIVE Exp	{}
-	|	Exp ADDITIVE Exp	{}
-	|	ID		{}
-	|	Call	{}
+Exp:	LPAREN Exp RPAREN	{$$ = $2}
+	|	Exp MULTIPLICATIVE Exp	{$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,(BinaryOperation*)$2)}
+	|	Exp ADDITIVE Exp	{$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,(BinaryOperation*)$2)}
+	|	ID		{$$ = (ID*)$1}
+	|	Call	{$$ = (Call*)$1}
 	|	NUM B	{$$ = new Byte((Number*)$1); }
 	|	NUM		{$$ = new Integer((Number*)$1); }
 	|	STRING	{$$ = (String*)$1;}
 	|	TRUE	{$$ = new Boolean(true);}
 	|	FALSE	{$$ = new Boolean(false);}
 	|	NOT Exp	{$$ = new Not((Expression*)$2)}
-	|	Exp AND Exp	{}
-	|	Exp OR Exp	{}
-	|	Exp RELATIONAL Exp {}
+	|	Exp AND Exp	{$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,new BooleanOperation(And))}
+	|	Exp OR Exp	{$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,new BooleanOperation(Or))}
+	|	Exp RELATIONAL Exp {$$ = new BinaryExpression((Exp*)$1,(Exp*)$3,(Relop*)$2)}
 	|	Exp EQUALITY Exp {}
 ;
 

@@ -6,11 +6,16 @@
 #include "output.hpp"
 #include <typeinfo>
 #include <sstream>
+#include <stdbool.h>
 #include <stdlib.h>     /* atoi */
 #define YYSTYPE Node*
 using namespace std;
 using namespace output;
 extern int yylineno;
+
+enum BoolOp{And,Or};
+class Relop;
+class BooleanOperation;
 
 
 class Node{
@@ -64,26 +69,41 @@ public:
     virtual ~Operation(){}
 };
 
+template<typename CheckType,typename InstanceType>
+bool isInstanceOf(InstanceType* instance){
+    return (dynamic_cast<CheckType*>(instance) != NULL);
+}
+
+template<typename CheckType,typename InstanceType1,typename InstanceType2>
+bool isSameType(InstanceType1* instance1,InstanceType2* instance2){
+    return (dynamic_cast<CheckType*>(instance1)!=NULL && dynamic_cast<CheckType*>(instance2)!=NULL);
+}
+
 class BinaryExpression : public Expression{
 public:
     Expression* leftExp;
     Expression* rightExp;
-    Operation op;
-    BinaryExpression(Expression* _leftExp, Expression* _rightExp,Operation _op)
+    Operation* op;
+    BinaryExpression(Expression* _leftExp, Expression* _rightExp,Operation* _op)
     :Expression(new Type()),leftExp(_leftExp),rightExp(_rightExp),op(_op) {
-        if ("Relop" == typeid(op).name() || "BooleanOperation" == typeid(op).name()) {
+        if ( isInstanceOf<Relop> (_op) || isInstanceOf<BooleanOperation>(_op)) {
             this->type = new BooleanType();
         } else {
             //if they are not of the same type we should take the larger one
             //(will always be int in our case)
-            if (typeid(leftExp->type).name() != typeid(rightExp->type).name()) {
-                this->type = new IntType();
-            } else {
+            if(isSameType<ByteType>(leftExp->type,rightExp->type)
+                    || isSameType<IntType>(leftExp->type,rightExp->type) ){
                 this->type = leftExp->type;
+            }else{
+                this->type = new IntType();
             }
         }
     }
-    virtual ~BinaryExpression(){}
+    virtual ~BinaryExpression(){
+        delete leftExp;
+        delete rightExp;
+        delete op;
+    }
 };
 
 class UnaryExpression : public Expression{
@@ -139,6 +159,8 @@ public:
 
 class BooleanOperation : public Operation{
 public:
+    BoolOp op;
+    BooleanOperation(BoolOp o):op(o){}
     virtual ~BooleanOperation(){}
 };
 
