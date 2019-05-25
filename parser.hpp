@@ -107,9 +107,9 @@ public:
 
 class BinaryOperation : public Operation{
 public:
-    char op;
+    string op;
 
-    BinaryOperation(string text):op(text[0]){}
+    BinaryOperation(string text):op(text){}
 
     virtual ~BinaryOperation(){}
 };
