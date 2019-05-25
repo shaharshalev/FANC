@@ -5,13 +5,9 @@
 #include <string.h> 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "fanC.hpp"
-#include "attributes.h"
-
-#define BYTE_MAX_VALUE (255)
-
-
-
+#include "output.hpp"
+#include "parser.hpp"
+#include "parser.tab.hpp"
 
 %}
 
@@ -20,9 +16,7 @@
 whitespace 			([\x20\x09\x0A\x0D])
 
 
-%x C_COMMENT
-%x C_STRING_TYPE1
-%x C_STRING_TYPE2
+
 
 %%
 
@@ -59,7 +53,7 @@ whitespace 			([\x20\x09\x0A\x0D])
 \"([^\n\r\"\\]|\\[rnt"\\])+\"		{return STRING;}
 {whitespace}						;
 <<EOF>>								;
-.									{errorLex(yylineno); exit(0);}
+.									{errorLex(yylineno);exit(0);}
 
 
 
@@ -67,6 +61,7 @@ whitespace 			([\x20\x09\x0A\x0D])
 
 
 %%
+
 
 /*Code*/
 

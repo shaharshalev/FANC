@@ -1,17 +1,14 @@
 %{
-	
-	#include <iostream>
-	#include <stdlib.h>
-	#include "funC.hpp"
-	#include "attributes.h"
 	#define YYDEBUG 1
 	#define YYERROR_VERBOSE 1
+	#include <iostream>
+	#include <stdlib.h>
+	#include "parser.hpp"
+	#include "output.hpp"
 	using namespace std;
 	extern int yylineno;
-
-	extern int yylex();
-	
-	int yyerror(char * message);
+	int yyerror(const char * message);
+	int yylex();
 %}
 
 %left ASSIGN
@@ -29,7 +26,7 @@
 %left ELSE
 %token WHILE
 %token BREAK
-%token CONTINTUE
+%token CONTINUE
 %token PRECOND
 %token SC
 %token COMMA
@@ -57,7 +54,7 @@ Funcs: /*epsilon*/ {}
 	| FuncDecl Funcs	{} 
 ;
 
-FuncDecl:	RetType ID LPAREN Formals RPAREN PreConditions LBRACE Statements RBRACE {}
+FuncDecl:	RetType ID LPAREN Formals RPAREN PreConditions LBRACE OpenFunctionScope Statements RBRACE {}
 ;
 
 RetType:	Type {}
@@ -86,18 +83,18 @@ Statements: Statement	{}
 	|	Statements Statement {}
 ;
 
-Statement: LBRACE Statements RBRACE	{}
+Statement: LBRACE OpenScope Statements RBRACE	{}
 	|	Type ID	SC	{}
 	|	Type ID ASSIGN Exp SC	{}
 	|	ID ASSIGN Exp SC	{}
 	|	Call SC	{}
 	|	RETURN SC	{}
 	|	RETURN Exp SC	{}
-	|	IF LPAREN Exp RPAREN Statement ELSE Statement 	{}
-	|	IF LPAREN Exp RPAREN Statement %prec IFPREC {}
-	|	WHILE LPAREN Exp RPAREN Statement	{}
+	|	IF LPAREN Exp RPAREN OpenIfScope Statement ELSE EndScope OpenScope Statement 	{}
+	|	IF LPAREN Exp RPAREN OpenIfScope Statement %prec IFPREC {}
+	|	WHILE LPAREN Exp RPAREN OpenWhileScope Statement	{}
 	|	BREAK SC	{}
-	|	CONTINTUE SC	{}
+	|	CONTINUE SC	{}
 ;
 
 Call:	ID LPAREN ExpList RPAREN	{}
@@ -130,9 +127,20 @@ Exp:	LPAREN Exp RPAREN	{}
 	|	Exp EQUALITY Exp {}
 ;
 
+OpenWhileScope: /*epsilon*/ {}
+;
 
+OpenIfScope: /*epsilon*/ {}
+;
 
+OpenFunctionScope: /*epsilon*/ {}
+;
 
+OpenScope: /*epsilon*/ {}
+;
+
+EndScope: /*epsilon*/ {}
+;
 
 
 
@@ -141,10 +149,10 @@ Exp:	LPAREN Exp RPAREN	{}
 %%
 
 int main(){
-	yydebug=1 // uncomment this inorder to debug
-	yyparse();
+	//yydebug=1 // uncomment this inorder to debug
+	return yyparse();
 }
-int yyerror(char * message){
+int yyerror(const char * message){
 	errorSyn(yylineno);
 	exit(1);
 }

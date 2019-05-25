@@ -1,30 +1,33 @@
 #ifndef _FANC_H_
 #define _FANC_H_
-
 #include <string>
 #include <vector>
+#include "output.hpp"
+#define YYSTYPE Node*
 using namespace std;
-vector<Scope*> table;
-vector<int> offsets;
+
 
 class Node{};
+
+class ReturnType : public Node{};
+
+class Type : public ReturnType{ //  TODO: Abstract class
+};
 
 class Expression : public Node{
 public:
     Type type;
 };
 
-class ReturnType : public Node{};
 class Void : public ReturnType{};
-
-class Type : public ReturnType{ //  TODO: Abstract class
-};
 
 class IntType : public Type{};
 
 class ByteType : public Type{};
 
 class BooleanType : public Type{};
+
+class Operation : public Node{};
 
 class BinaryExpression : public Expression{
 public:
@@ -35,7 +38,6 @@ public:
 
 class UnaryExpression : public Expression{};
 
-class Operation : public Node{};
 
 class BinaryOperation : public Operation{
 public:
@@ -77,22 +79,22 @@ public:
     ID id;
 };
 
-class FormalList : public Node{
+class FormalList : public Node {
 public:
     vector<FormalDec> declerations;
 };
 
-class PreCondition : public Node{
+class PreCondition : public Node {
 public:
     Expression exp;
 };
 
-class PreConditions : public Node{
+class PreConditions : public Node {
 public:
     vector<PreCondition> preconditions;
 };
 
-class FuncDec : public Node{
+class FuncDec : public Node {
     ReturnType returnType;
     ID id;
     FormalList arguments;
@@ -102,26 +104,30 @@ class FuncDec : public Node{
 class Scope{
 public:
     vector<ID> ids;
-    virtual void endScope(){}
+    virtual void endScope();
 
 };
 
-class IfScope: public Scope{
+class IfScope: public Scope {
 public:
-    void endScope() override{}
+    void endScope();
 
 };
 
-class WhileScope: public Scope{
+class WhileScope: public Scope {
 public:
-    void endScope() override{}
+    void endScope();
 
 };
 
-class FunctionScope: public Scope{
+class FunctionScope: public Scope {
 public:
-    void endScope() override{}
+    void endScope();
 
 };
+
+
+vector<Scope*> table;
+vector<int> offsets;
 
 #endif //FANC_H_
