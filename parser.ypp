@@ -17,7 +17,7 @@
     void validateAssignment(Id* id,Expression* exp);
     void insertVarToTable(Type* type,Id* id);
 
-	vector<Scope*> table;
+	vector<Scope*> symbolTable;
 	vector<int> offsets;
 	FuncDec* currentFunction=NULL;
 %}
@@ -65,7 +65,20 @@ Funcs: /*epsilon*/ {}
 	| FuncDecl Funcs	{} 
 ;
 
-FuncDecl:	RetType ID LPAREN Formals RPAREN PreConditions LBRACE OpenFunctionScope Statements RBRACE {}
+FuncDecl:	FuncDeclSignature LBRACE  Statements RBRACE {}
+;
+
+FuncDeclSignature: RetType ID LPAREN Formals RPAREN PreConditions {
+      ReturnType* returnType=dynamic_cast<ReturnType*>($1);
+      Id* id=dynamic_cast<Id*>($2);
+      FormalList* formals=dynamic_cast<FormalList*>($4);
+      PreConditions* preconditions=dynamic_cast<PreConditions*>($6);
+
+    symbolTable.push_back(
+    new FunctionScope(symbolTable.back(),
+                        new FuncDec(returnType,id,formals,preconditions)
+    ));
+}
 ;
 
 RetType:	Type {$$ = $1;}
@@ -147,10 +160,6 @@ OpenWhileScope: /*epsilon*/ {
 OpenIfScope: /*epsilon*/ {}
 ;
 
-OpenFunctionScope: /*epsilon*/ {
-
-}
-;
 
 OpenScope: /*epsilon*/ {}
 ;
