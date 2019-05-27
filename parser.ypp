@@ -23,6 +23,7 @@
     void handleIf(Expression* exp);
     FuncDec* getFunction();
     void handleArgumentDecl(FormalList* formalList);
+    Call* handleCall(Id* id,ExpressionList* expList);
 
 	vector<Scope*> symbolTable;
 	vector<int> offsets;
@@ -119,7 +120,7 @@ Statement: LBRACE OpenScope Statements RBRACE	{symbolTable.back()->endScope();}
 	|	Type ID	SC	{handleTypeDecl((Type*)$1,(Id*)$2);}
 	|	Type ID ASSIGN Exp SC	{handleTypeDecl((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4); delete $4;}
 	|	ID ASSIGN Exp SC	{assignToVar((Id*)$1,(Expression*)$3);}
-	|	Call SC	{validateCall((Call*)$1);}
+	|	Call SC	{delete $1; }
 	|	RETURN SC	{validateFunctionReturnType(NULL);}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);}
 	|	IF LPAREN Exp RPAREN OpenScope Statement ELSE EndScope OpenScope Statement 	{handleIf((Expression*)$3);}
@@ -128,10 +129,9 @@ Statement: LBRACE OpenScope Statements RBRACE	{symbolTable.back()->endScope();}
 	|	BREAK SC	{validateWhile(Break);}
 	|	CONTINUE SC	{validateWhile(Continue);}
 ;
-//todo: CHANGE RETURN TYPE TO REAL TYPE AFTER SEARCHING IN SYMBOL TABLE and validate in here because this cal can become exp
-//todo: and the type
-Call:	ID LPAREN ExpList RPAREN	{$$=new Call(new ReturnType(),((Id*)$1),((ExpressionList*)$3));}
-	|	ID LPAREN RPAREN	{$$=new Call(new ReturnType(),((Id*)$1),new ExpressionList());}
+
+Call:	ID LPAREN ExpList RPAREN	{$$=handleCall((Id*)$1,(ExpressionList*)$3);}
+	|	ID LPAREN RPAREN	{$$ = handleCall(((Id*)$1),new ExpressionList());}
 ;
 
 ExpList: Exp	{$$=new ExpressionList((Expression*)$1);}
@@ -276,21 +276,22 @@ void validateFunctionReturnType(Expression* exp){
         delete exp;
 }
 
-void validateCall(Call* call){
-    FuncDec* func=symbolTable.back()->getFunction(call->id);
+Call* handleCall(Id* id,ExpressionList* expList){
+    FuncDec* func=symbolTable.back()->getFunction(id);
+
     if(NULL == func){
-        errorUndefFunc(yylineno,call->id->name);
+        errorUndefFunc(yylineno,id->name);
         exit(1);
     }
-    if(!func->isArgumentListMatch(call->expressions)){
+
+    if(!func->isArgumentListMatch(expList)){
         vector<string>* strVec = func->getArgsAsString();
         vector<string>& v = *strVec;
-        errorPrototypeMismatch(yylineno,call->id->name,v);
+        errorPrototypeMismatch(yylineno,id->name,v);
         delete strVec;
         exit(1);
     }
-    if(call!=NULL)
-        delete call;
+    return new Call(func->returnType,id,expList);
 }
 
 /*
