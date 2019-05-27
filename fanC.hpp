@@ -321,6 +321,33 @@ public:
     }
 };
 
+
+
+class ExpressionList : public Node {
+        public:
+        vector<Expression *> expressions;
+
+        ExpressionList() {}
+
+        ExpressionList(Expression *exp) {
+            expressions.insert(expressions.begin(), exp);
+        }
+
+        ExpressionList *add(Expression *exp) {
+            expressions.insert(expressions.begin(), exp);
+            return this;
+        }
+
+        virtual ~ExpressionList() {
+            for (vector<Expression *>::iterator it = expressions.begin(); it != expressions.end(); ++it) {
+                delete *it;
+            }
+        }
+};
+
+
+
+
 class FuncDec : public Node {
 public:
     ReturnType *returnType;
@@ -336,6 +363,22 @@ public:
                                           arguments(_arguments),
                                           conditions(_conditions) {}
 
+
+    bool isArgumentListMatch(ExpressionList* expList){
+        vector<Expression *>::iterator expIt = expList->expressions.begin();
+        vector<FormalDec *>::iterator formalIt = this->arguments->declerations.begin();
+        while( (expIt != expList->expressions.end()) && (formalIt != arguments->declerations.end())){
+            if(typeid((*expIt)->type).name() != typeid((*formalIt)->type).name()) return false;
+            ++expIt;
+            ++formalIt;
+        }
+        if(expIt != expList->expressions.end() || formalIt != arguments->declerations.end())
+            return false;
+
+        return true;
+    }
+
+
     virtual ~FuncDec() {
         delete returnType;
         delete id;
@@ -344,27 +387,7 @@ public:
     }
 };
 
-class ExpressionList : public Node {
-public:
-    vector<Expression *> expressions;
 
-    ExpressionList() {}
-
-    ExpressionList(Expression *exp) {
-        expressions.insert(expressions.begin(), exp);
-    }
-
-    ExpressionList *add(Expression *exp) {
-        expressions.insert(expressions.begin(), exp);
-        return this;
-    }
-
-    virtual ~ExpressionList() {
-        for (vector<Expression *>::iterator it = expressions.begin(); it != expressions.end(); ++it) {
-            delete *it;
-        }
-    }
-};
 
 class Call : public UnaryExpression {
 public:
@@ -403,6 +426,16 @@ private:
         return functions.end() != std::find(functions.begin(), functions.end(), func);
     }
 
+    FuncDec* getFunctionInScope(Id* id){
+
+        for (vector<FuncDec *>::iterator it = functions.begin(); it != functions.end(); ++it) {
+            if( (*it)->id == id){
+                return *it;
+            }
+        }
+        return NULL;
+    }
+
 public:
 
     /**
@@ -417,6 +450,16 @@ public:
             return parent->isFunctionExist(func);
         }else{
             return false;
+        }
+    }
+    virtual FuncDec* getFunction(Id* id){
+        FuncDec* found=getFunctionInScope(id);
+        if(NULL != found){
+            return found;
+        }else if(NULL != parent){
+            return parent->getFunction(id);
+        }else{
+            return NULL;
         }
     }
 private:
