@@ -406,14 +406,12 @@ public:
 class Call : public UnaryExpression {
 public:
     Id *id;
-    ReturnType *returnType;
     ExpressionList *expressions;
 
     Call(ReturnType *_returnType, Id *_id, ExpressionList *_expressions)
-            : UnaryExpression(_returnType), returnType(_returnType), id(_id), expressions(_expressions) {}
+            : UnaryExpression(_returnType),id(_id), expressions(_expressions) {}
 
     virtual ~Call() {
-        delete returnType;
         delete expressions;
         delete id;
     }
@@ -506,6 +504,7 @@ public:
 
     virtual void endScope() {
         output::endScope();
+        //TODO
 
     }
 
@@ -520,20 +519,14 @@ public:
     }
 
 };
-/*
-class IfScope : public Scope {
-public:
-    IfScope(Scope* _parent):Scope(_parent){}
-    void endScope()  {}
-    virtual ~IfScope(){
 
-    }
-};*/
 
 class WhileScope : public Scope {
 public:
     WhileScope(Scope* _parent):Scope(_parent){}
-    void endScope()  {}
+    void endScope()  {
+        //TODO
+    }
     virtual ~WhileScope(){
 
     }
@@ -542,8 +535,10 @@ public:
 class FunctionScope : public Scope {
 public:
     FuncDec* func;
-    FunctionScope(Scope* _parent,FuncDec* _func):Scope(_parent),func(_func){
-        if(NULL != parent)
+    FunctionScope(Scope* _parent):Scope(_parent){}
+    void updateFunctionScope(FuncDec* _func){
+        func=_func;
+        if(NULL != this->parent)
             parent->addFunction(_func);
     }
     FuncDec* getFunction(){
@@ -551,6 +546,7 @@ public:
     }
 
     void endScope()  {
+        //TODO
         output::endScope();
         output::printPreconditions(func->id->name,func->conditions->size());
 

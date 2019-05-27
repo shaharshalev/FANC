@@ -74,16 +74,13 @@ Funcs: /*epsilon*/ {}
 FuncDecl:	FuncDeclSignature LBRACE  Statements RBRACE {symbolTable.back()->endScope();}
 ;
 
-FuncDeclSignature: RetType ID LPAREN Formals RPAREN PreConditions {
-      ReturnType* returnType=dynamic_cast<ReturnType*>($1);
-      Id* id=dynamic_cast<Id*>($2);
-      FormalList* formals=dynamic_cast<FormalList*>($4);
-      PreConditions* preconditions=dynamic_cast<PreConditions*>($6);
-
-    symbolTable.push_back(
-    new FunctionScope(symbolTable.back(),
-                        new FuncDec(returnType,id,formals,preconditions)
-    ));
+FuncDeclSignature:OpenFunctionScope RetType ID LPAREN Formals RPAREN PreConditions {
+      ReturnType* returnType=dynamic_cast<ReturnType*>($2);
+      Id* id=dynamic_cast<Id*>($3);
+      FormalList* formals=dynamic_cast<FormalList*>($5);
+      PreConditions* preconditions=dynamic_cast<PreConditions*>($7);
+    FunctionScope * Scope = (FunctionScope*)symbolTable.back();
+    Scope->updateFunctionScope(new FuncDec(returnType,id,formals,preconditions));
 }
 ;
 
@@ -131,7 +128,8 @@ Statement: LBRACE OpenScope Statements RBRACE	{symbolTable.back()->endScope();}
 	|	BREAK SC	{validateWhile(Break);}
 	|	CONTINUE SC	{validateWhile(Continue);}
 ;
-//todo: CHANGE RETURN TYPE TO REAL TYPE AFTER SEARCHING IN SYMBOL TABLE
+//todo: CHANGE RETURN TYPE TO REAL TYPE AFTER SEARCHING IN SYMBOL TABLE and validate in here because this cal can become exp
+//todo: and the type
 Call:	ID LPAREN ExpList RPAREN	{$$=new Call(new ReturnType(),((Id*)$1),((ExpressionList*)$3));}
 	|	ID LPAREN RPAREN	{$$=new Call(new ReturnType(),((Id*)$1),new ExpressionList());}
 ;
@@ -149,7 +147,7 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 	|	Exp MULTIPLICATIVE Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(BinaryOperation*)$2);}
 	|	Exp ADDITIVE Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(BinaryOperation*)$2);}
 	|	ID		{$$ = (Id*)$1;}
-	|	Call	{$$ = (Call*)$1;}
+	|	Call	{$$ = (Call*)$1; }
 	|	NUM B	{$$ = new Byte((Number*)$1); }
 	|	NUM		{$$ = new Integer((Number*)$1); }
 	|	STRING	{$$ = (String*)$1;}
@@ -176,10 +174,17 @@ OpenScope: /*epsilon*/ {
         assert(offsets.empty());
         symbolTable.push_back(new Scope(NULL));
         offsets.push_back(0);
+        /*TODO : insert print and iprint*/
     }else{
         symbolTable.push_back(new Scope(symbolTable.back()));
         offsets.push_back(offsets.back());
     }
+}
+;
+
+OpenFunctionScope: {
+    symbolTable.push_back(new FunctionScope(symbolTable.back()));
+    offsets.push_back(offsets.back());
 }
 ;
 
