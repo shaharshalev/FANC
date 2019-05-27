@@ -20,7 +20,7 @@
     Id* extractIdFromSymbolTable(Id* id);
     void assignToVar(Id* id,Expression* exp);
     void handleIf(Expression* exp);
-
+    FuncDec* getFunction();
 
 	vector<Scope*> symbolTable;
 	vector<int> offsets;
@@ -224,12 +224,37 @@ void handleWhile(Expression* exp){
     delete exp;
 }
 bool inWhile(){
-    //TODO: check if we are in a while in a symbol table and return accordingly
+    for(vector<Scope*>::reverse_iterator i = symbolTable.rbegin();i != symbolTable.rend(); ++i){
+        Scope* scope=*i;
+        if(isInstanceOf<WhileScope>(scope)) return true;
+    }
+    return false;
 }
 
+FuncDec* getFunction(){
+ for(vector<Scope*>::reverse_iterator i = symbolTable.rbegin();i != symbolTable.rend(); ++i){
+        Scope* scope=*i;
+        if(isInstanceOf<FunctionScope>(scope)) {
+            FunctionScope* functionScope = dynamic_cast<FunctionScope*>(scope);
+            return functionScope->getFunction();
+        }
+    }
+    return NULL;
+}
+
+
+/**
+* this function validates that we return from a function
+* and the expression is of the same type as the function returned type.
+*/
 void validateFunctionReturnType(Expression* exp){
-    //TODO: validate in symbol table that we are inside a function of the same Type of exp
-    // also make sure to delete it afterwards
+    FuncDec* func=getFunction();
+    if((NULL == func)
+    ||(exp==NULL && !isInstanceOf<Void>(func->returnType))
+    ||(exp!=NULL && typeid(exp->type).name()!= typeid(func->returnType).name())){
+        errorMismatch(yylineno);
+        exit(1);
+    }
     if(exp!=NULL)
         delete exp;
 }
@@ -292,7 +317,13 @@ void handleIf(Expression* exp){
 bool operator==(const Id& a,const Id& b){
     return a.name==b.name;
 }
+bool operator!=(const Id& a,const Id& b){
+    return a.name!=b.name;
+}
 
 bool operator==(const FuncDec& a,const FuncDec& b){
     return a.id==b.id;
+}
+bool operator!=(const FuncDec& a,const FuncDec& b){
+    return a.id!=b.id;
 }

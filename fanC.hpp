@@ -404,6 +404,7 @@ private:
     }
 
 public:
+
     /**
      * the method check if function exist in this scope or above.
      * @param func is the function
@@ -480,10 +481,13 @@ public:
 
 class FunctionScope : public Scope {
 public:
-
-    FunctionScope(Scope* _parent,FuncDec* func):Scope(_parent){
+    FuncDec* func;
+    FunctionScope(Scope* _parent,FuncDec* _func):Scope(_parent),func(_func){
         if(NULL != parent)
-            parent->addFunction(func);
+            parent->addFunction(_func);
+    }
+    FuncDec* getFunction(){
+        return func;
     }
 
     void endScope()  {}
