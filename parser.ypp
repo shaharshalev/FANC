@@ -5,6 +5,7 @@
 	#include <stdlib.h>
 	#include "fanC.hpp"
 	#include "output.hpp"
+	#include <assert.h>     /* assert */
 	extern int yylineno;
 	int yyerror(const char * message);
 	int yylex();
@@ -21,6 +22,7 @@
     void assignToVar(Id* id,Expression* exp);
     void handleIf(Expression* exp);
     FuncDec* getFunction();
+    void handleArgumentDecl(FormalList* formalList);
 
 	vector<Scope*> symbolTable;
 	vector<int> offsets;
@@ -90,14 +92,19 @@ RetType:	Type {$$ = $1;}
 ;
 
 Formals:	/*epsilon*/ {$$ = new FormalList();}
-	|	FormalsList {$$ = (FormalList*)$1;}
+	| 	FormalsList {handleArgumentDecl((FormalList*)$1);$$ = (FormalList*)$1;}
 ;
 
 FormalsList:	FormalDecl	{$$=new FormalList((FormalDec*)$1);}
 	|	FormalDecl	COMMA FormalsList {$$=((FormalList*)$3)->add((FormalDec*)$1);}
 ;
 
-FormalDecl:	Type ID {handleTypeDecl((Type*)$1,(Id*)$2);$$=new FormalDec((Type*)$1,(Id*)$2);}
+FormalDecl:	Type ID {
+    Type* type=(Type*)$1;
+    Id* id=(Id*)$2;
+    id->updateType(type);
+    $$=new FormalDec(type,id);
+}
 ;
 
 PreConditions:	/*epsilon*/ {$$=new PreConditions();}
@@ -157,7 +164,7 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 
 OpenWhileScope: /*epsilon*/ {
     symbolTable.push_back(new WhileScope(symbolTable.back()));
-    //TODO insert in offsets
+    offsets.push_back(offsets.back());
 }
 ;
 
@@ -165,22 +172,23 @@ OpenWhileScope: /*epsilon*/ {
 
 
 OpenScope: /*epsilon*/ {
-    if(symbolTable.empty())
+    if(symbolTable.empty()){
+        assert(offsets.empty());
         symbolTable.push_back(new Scope(NULL));
-    else{
+        offsets.push_back(0);
+    }else{
         symbolTable.push_back(new Scope(symbolTable.back()));
+        offsets.push_back(offsets.back());
     }
-    //TODO add to offset table
- }
+}
 ;
 
 EndScope: /*epsilon*/ {
     Scope* currentScope = symbolTable.back();
     symbolTable.pop_back();
+    offsets.pop_back();
     currentScope->endScope();
     delete currentScope;
-
-    //TODO remove offset;
 }
 ;
 
@@ -293,14 +301,31 @@ void validateAssignment(Id* id,Expression* exp){
 }
 
 void insertVarToTable(Id* id){
+    int newOffset=offsets.back();
+    offsets.pop_back();
+    offsets.push_back(newOffset+1);
+    id->offset=newOffset;
     symbolTable.back()->addVariable(id);
-    //TODO insert to offsets
 }
 
 void handleTypeDecl(Type* type,Id* id){
     id->updateType(type);
     insertVarToTable(id);
 
+}
+
+void handleArgumentDecl(FormalList* formalList){
+
+     int offset=-1;
+     vector<FormalDec *>::iterator it=formalList->decelerations.begin();
+     while(formalList->decelerations.end() != it){
+        FormalDec* formalDec=*it;
+        Id* id= formalDec->id;
+        id->offset=offset;
+        symbolTable.back()->addVariable(id);
+        --offset;
+        ++it;
+     }
 }
 /**
 ** This function extracts the id from symbol table.

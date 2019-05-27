@@ -198,6 +198,7 @@ public:
     string name;
     int offset;
     friend bool operator==(const Id& ,const Id& );
+    friend bool operator!=(const Id& ,const Id& );
 
     Id(string text) : UnaryExpression(new Type()), name(text) {}
 
@@ -258,8 +259,8 @@ public:
 
 class FormalDec : public Node {
 public:
-    Type *type;
-    Id *id;
+    Type* type;
+    Id* id;
 
     FormalDec(Type *_type, Id *_id) : type(_type), id(_id) {}
 
@@ -272,7 +273,7 @@ public:
 
 class FormalList : public Node {
 public:
-    vector<FormalDec *> declerations;
+    vector<FormalDec *> decelerations;
 
     FormalList() {}
 
@@ -281,7 +282,7 @@ public:
     }
 
     FormalList *add(FormalDec *formalDec) {
-        declerations.insert(declerations.begin(), formalDec);
+            decelerations.insert(decelerations.begin(), formalDec);
         return this;
     }
 
@@ -355,6 +356,7 @@ public:
     FormalList *arguments;
     PreConditions *conditions;
     friend bool operator==(const FuncDec& ,const FuncDec& );
+    friend bool operator!=(const FuncDec& ,const FuncDec& );
 
 
     FuncDec(ReturnType *_returnType,
@@ -366,9 +368,9 @@ public:
 
 
     vector<string>* getArgsAsString(){
-        vector<FormalDec *>::iterator it = this->arguments->declerations.begin();
+        vector<FormalDec *>::iterator it = this->arguments->decelerations.begin();
         vector<string>* typesName = new vector<string>();
-        while(it != arguments->declerations.end()){
+        while(it != arguments->decelerations.end()){
             typesName->push_back(typeid((*it)->type).name());
             ++it;
         }
@@ -378,13 +380,13 @@ public:
 
     bool isArgumentListMatch(ExpressionList* expList){
         vector<Expression *>::iterator expIt = expList->expressions.begin();
-        vector<FormalDec *>::iterator formalIt = this->arguments->declerations.begin();
-        while( (expIt != expList->expressions.end()) && (formalIt != arguments->declerations.end())){
+        vector<FormalDec *>::iterator formalIt = this->arguments->decelerations.begin();
+        while( (expIt != expList->expressions.end()) && (formalIt != arguments->decelerations.end())){
             if(typeid((*expIt)->type).name() != typeid((*formalIt)->type).name()) return false;
             ++expIt;
             ++formalIt;
         }
-        if(expIt != expList->expressions.end() || formalIt != arguments->declerations.end())
+        if(expIt != expList->expressions.end() || formalIt != arguments->decelerations.end())
             return false;
 
         return true;
@@ -502,7 +504,10 @@ public:
     }
 
 
-    virtual void endScope() {}
+    virtual void endScope() {
+        output::endScope();
+
+    }
 
     virtual ~Scope(){
         for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
@@ -545,7 +550,11 @@ public:
         return func;
     }
 
-    void endScope()  {}
+    void endScope()  {
+        output::endScope();
+        output::printPreconditions(func->id->name,func->conditions->size());
+
+    }
     virtual ~FunctionScope(){
     }
 };
