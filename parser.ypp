@@ -264,3 +264,11 @@ Id* extractIdFromSymbolTable(Id* id){
 
     }
 }
+
+bool operator==(const Id& a,const Id& b){
+    return a.name==b.name;
+}
+
+bool operator==(const FuncDec& a,const FuncDec& b){
+    return a.id==b.id;
+}

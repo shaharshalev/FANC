@@ -197,7 +197,7 @@ class Id : public UnaryExpression {
 public:
     string name;
     int offset;
-    //friend bool operator==(const Id& a,const Id& b);
+    friend bool operator==(const Id& ,const Id& );
 
     Id(string text) : UnaryExpression(new Type()), name(text) {}
 
@@ -209,9 +209,7 @@ public:
 
     virtual ~Id() {}
 };
-/*bool operator==(const Id& a,const Id& b){
-    return a.name==b.name;
-}*/
+
 
 class String : public UnaryExpression {
 public:
@@ -329,7 +327,7 @@ public:
     Id *id;
     FormalList *arguments;
     PreConditions *conditions;
-    //friend bool operator==(const FuncDec& a,const FuncDec& b);
+    friend bool operator==(const FuncDec& ,const FuncDec& );
 
     FuncDec(ReturnType *_returnType,
             Id *_id, FormalList *_arguments,
@@ -345,9 +343,7 @@ public:
         delete conditions;
     }
 };
-/*bool operator==(const FuncDec& a,const FuncDec& b){
-    return a.id==b.id;
-}*/
+
 class ExpressionList : public Node {
 public:
     vector<Expression *> expressions;
