@@ -223,6 +223,7 @@ void handleWhile(Expression* exp){
     symbolTable.back()->endScope();
     delete exp;
 }
+
 bool inWhile(){
     for(vector<Scope*>::reverse_iterator i = symbolTable.rbegin();i != symbolTable.rend(); ++i){
         Scope* scope=*i;
@@ -266,10 +267,15 @@ void validateCall(Call* call){
     FuncDec* func=symbolTable.back()->getFunction(call->id);
     if(NULL == func){
         errorUndefFunc(yylineno,call->id->name);
+        exit(1);
     }
-
-    //TODO: validate that call id exist in symbol type (errorUndefFunc)
-    // also make sure to delete it afterwards
+    if(!func->isArgumentListMatch(call->expressions)){
+        vector<string>* strVec = func->getArgsAsString();
+        vector<string>& v = *strVec;
+        errorPrototypeMismatch(yylineno,call->id->name,v);
+        delete strVec;
+        exit(1);
+    }
     if(call!=NULL)
         delete call;
 }

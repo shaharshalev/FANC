@@ -356,12 +356,24 @@ public:
     PreConditions *conditions;
     friend bool operator==(const FuncDec& ,const FuncDec& );
 
+
     FuncDec(ReturnType *_returnType,
             Id *_id, FormalList *_arguments,
             PreConditions *_conditions) : returnType(_returnType),
                                           id(_id),
                                           arguments(_arguments),
                                           conditions(_conditions) {}
+
+
+    vector<string>* getArgsAsString(){
+        vector<FormalDec *>::iterator it = this->arguments->declerations.begin();
+        vector<string>* typesName = new vector<string>();
+        while(it != arguments->declerations.end()){
+            typesName->push_back(typeid((*it)->type).name());
+            ++it;
+        }
+        return typesName;
+    }
 
 
     bool isArgumentListMatch(ExpressionList* expList){
