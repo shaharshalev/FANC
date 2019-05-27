@@ -16,6 +16,16 @@ using namespace std;
 using namespace output;
 extern int yylineno;
 
+template<typename CheckType, typename InstanceType>
+bool isInstanceOf(InstanceType *instance) {
+    return (dynamic_cast<CheckType *>(instance) != NULL);
+}
+
+template<typename CheckType, typename InstanceType1, typename InstanceType2>
+bool isSameType(InstanceType1 *instance1, InstanceType2 *instance2) {
+    return (dynamic_cast<CheckType *>(instance1) != NULL && dynamic_cast<CheckType *>(instance2) != NULL);
+}
+
 enum BoolOp {
     And, Or
 };
@@ -82,15 +92,7 @@ public:
     virtual ~Operation() {}
 };
 
-template<typename CheckType, typename InstanceType>
-bool isInstanceOf(InstanceType *instance) {
-    return (dynamic_cast<CheckType *>(instance) != NULL);
-}
 
-template<typename CheckType, typename InstanceType1, typename InstanceType2>
-bool isSameType(InstanceType1 *instance1, InstanceType2 *instance2) {
-    return (dynamic_cast<CheckType *>(instance1) != NULL && dynamic_cast<CheckType *>(instance2) != NULL);
-}
 
 class BinaryExpression : public Expression {
 public:
@@ -195,12 +197,21 @@ class Id : public UnaryExpression {
 public:
     string name;
     int offset;
+    //friend bool operator==(const Id& a,const Id& b);
 
     Id(string text) : UnaryExpression(new Type()), name(text) {}
 
+    Id* updateType(Type* t){
+        delete this->type;
+        this->type = t;
+        return this;
+    }
+
     virtual ~Id() {}
 };
-
+/*bool operator==(const Id& a,const Id& b){
+    return a.name==b.name;
+}*/
 
 class String : public UnaryExpression {
 public:
@@ -318,6 +329,7 @@ public:
     Id *id;
     FormalList *arguments;
     PreConditions *conditions;
+    //friend bool operator==(const FuncDec& a,const FuncDec& b);
 
     FuncDec(ReturnType *_returnType,
             Id *_id, FormalList *_arguments,
@@ -326,7 +338,6 @@ public:
                                           arguments(_arguments),
                                           conditions(_conditions) {}
 
-
     virtual ~FuncDec() {
         delete returnType;
         delete id;
@@ -334,7 +345,9 @@ public:
         delete conditions;
     }
 };
-
+/*bool operator==(const FuncDec& a,const FuncDec& b){
+    return a.id==b.id;
+}*/
 class ExpressionList : public Node {
 public:
     vector<Expression *> expressions;
@@ -383,34 +396,56 @@ public:
     }
     Scope(Scope* _parent):parent(_parent){}
 
-    void addId(Id* id){
+    void addVariable(Id* id){
         variables.push_back(id);
     }
     void addFunction(FuncDec* func){
         functions.push_back(func);
     }
+private:
     bool isFunctionExistInScope(FuncDec* func){
         return functions.end() != std::find(functions.begin(), functions.end(), func);
     }
-    bool isVariableExistInScope(Id* id){
-        return variables.end() != std::find(variables.begin(), variables.end(), id);
-    }
-    bool isFunctionExistInScopes(FuncDec* func){
+
+public:
+    /**
+     * the method check if function exist in this scope or above.
+     * @param func is the function
+     * @return true if exists, false otherwise
+     */
+    bool isFunctionExist(FuncDec* func){
         if(isFunctionExistInScope(func)) {
             return true;
         }else if(NULL != parent){
-            return parent->isFunctionExistInScopes(func);
+            return parent->isFunctionExist(func);
         }else{
             return false;
         }
     }
-    bool isVariableExistInScopes(Id* id){
-        if(isVariableExistInScope(id)) {
-            return true;
-        }else if(NULL != parent){
-            return parent->isVariableExistInScopes(id);
+private:
+    Id* getVariableInScope(Id* id){
+        vector<Id *>::iterator it=std::find(variables.begin(), variables.end(), id);
+        if(it!= variables.end()){
+            return *it;
         }else{
-            return false;
+            return NULL;
+        }
+    }
+
+public:
+    /**
+     * the method gets a variable from this scope or parents scopes.
+     * @param id
+     * @return the id from the symbolTable, NULL if no such id exist
+     */
+    Id* getVariable(Id* id){
+        Id* found=getVariableInScope(id);
+        if(NULL != found){
+            return found;
+        }else if(NULL != parent){
+            return parent->getVariable(id);
+        }else{
+            return NULL;
         }
     }
 
@@ -426,8 +461,9 @@ public:
         }
 
     }
-};
 
+};
+/*
 class IfScope : public Scope {
 public:
     IfScope(Scope* _parent):Scope(_parent){}
@@ -435,7 +471,7 @@ public:
     virtual ~IfScope(){
 
     }
-};
+};*/
 
 class WhileScope : public Scope {
 public:

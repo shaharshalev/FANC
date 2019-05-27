@@ -3,7 +3,7 @@
 	#define YYERROR_VERBOSE 1
 	#include <iostream>
 	#include <stdlib.h>
-	#include "parser.hpp"
+	#include "fanC.hpp"
 	#include "output.hpp"
 	extern int yylineno;
 	int yyerror(const char * message);
@@ -15,11 +15,12 @@
     void validateFunctionReturnType(Expression* exp);
     void validateCall(Call* call);
     void validateAssignment(Id* id,Expression* exp);
-    void insertVarToTable(Type* type,Id* id);
+    void insertVarToTable(Id* id);
+    void handleTypeDecl(Type* type,Id* id);
+    Id* extractIdFromSymbolTable(Id* id);
 
 	vector<Scope*> symbolTable;
 	vector<int> offsets;
-	FuncDec* currentFunction=NULL;
 %}
 
 %left ASSIGN
@@ -58,14 +59,14 @@
 
 %%
 
-Program:	Funcs	{}
+Program:	OpenScope Funcs	{symbolTable.back()->endScope(); /*End global scope*/}
 ;
 
 Funcs: /*epsilon*/ {}
 	| FuncDecl Funcs	{} 
 ;
 
-FuncDecl:	FuncDeclSignature LBRACE  Statements RBRACE {}
+FuncDecl:	FuncDeclSignature LBRACE  Statements RBRACE {symbolTable.back()->endScope();}
 ;
 
 FuncDeclSignature: RetType ID LPAREN Formals RPAREN PreConditions {
@@ -93,7 +94,7 @@ FormalsList:	FormalDecl	{$$=new FormalList((FormalDec*)$1);}
 	|	FormalDecl	COMMA FormalsList {$$=((FormalList*)$3)->add((FormalDec*)$1);}
 ;
 
-FormalDecl:	Type ID {$$=new FormalDec((Type*)$1,(Id*)$2);}
+FormalDecl:	Type ID {handleTypeDecl((Type*)$1,(Id*)$2);$$=new FormalDec((Type*)$1,(Id*)$2);}
 ;
 
 PreConditions:	/*epsilon*/ {$$=new PreConditions();}
@@ -107,16 +108,16 @@ Statements: Statement	{}
 	|	Statements Statement {}
 ;
 
-Statement: LBRACE OpenScope Statements RBRACE	{/* close scope here :) */}
-	|	Type ID	SC	{insertVarToTable((Type*)$1,(Id*)$2);}
-	|	Type ID ASSIGN Exp SC	{insertVarToTable((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4);}
-	|	ID ASSIGN Exp SC	{validateAssignment((Id*)$1,(Expression*)$3);}
+Statement: LBRACE OpenScope Statements RBRACE	{symbolTable.back()->endScope();}
+	|	Type ID	SC	{handleTypeDecl((Type*)$1,(Id*)$2);insertVarToTable((Id*)$2);}
+	|	Type ID ASSIGN Exp SC	{handleTypeDecl((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4); }
+	|	ID ASSIGN Exp SC	{extractIdFromSymbolTable((Id*)$1);validateAssignment((Id*)$1,(Expression*)$3);}
 	|	Call SC	{validateCall((Call*)$1);}
 	|	RETURN SC	{validateFunctionReturnType(NULL);}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);}
-	|	IF LPAREN Exp RPAREN OpenIfScope Statement ELSE EndScope OpenScope Statement 	{validateExpIsBool((Expression*)$3);}
-	|	IF LPAREN Exp RPAREN OpenIfScope Statement %prec IFPREC {validateExpIsBool((Expression*)$3);}
-	|	WHILE LPAREN Exp RPAREN OpenWhileScope Statement	{handleWhile((Expression*)$3);}
+	|	IF LPAREN Exp RPAREN OpenScope Statement ELSE EndScope OpenScope Statement 	{validateExpIsBool((Expression*)$3);symbolTable.back()->endScope();}
+	|	IF LPAREN Exp RPAREN OpenScope Statement %prec IFPREC {validateExpIsBool((Expression*)$3);symbolTable.back()->endScope();}
+	|	WHILE LPAREN Exp RPAREN OpenWhileScope Statement	{handleWhile((Expression*)$3);symbolTable.back()->endScope();}
 	|	BREAK SC	{validateWhile(Break);}
 	|	CONTINUE SC	{validateWhile(Continue);}
 ;
@@ -152,19 +153,32 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 ;
 
 OpenWhileScope: /*epsilon*/ {
-
-
+    symbolTable.push_back(new WhileScope(symbolTable.back()));
+    //TODO insert in offsets
 }
 ;
 
-OpenIfScope: /*epsilon*/ {}
+
+
+
+OpenScope: /*epsilon*/ {
+    if(symbolTable.empty())
+        symbolTable.push_back(new Scope(NULL));
+    else{
+        symbolTable.push_back(new Scope(symbolTable.back()));
+    }
+    //TODO add to offset table
+ }
 ;
 
+EndScope: /*epsilon*/ {
+    Scope* currentScope = symbolTable.back();
+    symbolTable.pop_back();
+    currentScope->endScope();
+    delete currentScope;
 
-OpenScope: /*epsilon*/ {}
-;
-
-EndScope: /*epsilon*/ {}
+    //TODO remove offset;
+}
 ;
 
 
@@ -221,12 +235,32 @@ void validateCall(Call* call){
     // also make sure to delete it afterwards
 }
 
+/*
+**this function validate assignment to id by comparing exp type.
+** this function assume that id type is updated.
+*/
 void validateAssignment(Id* id,Expression* exp){
-    //TODO:
-    // 1. find the id in symbol table (if not exist errorUndef(lineno,id))
-    // 2. validate that exp type = id type
+    if(typeid(id->type).name() !=  typeid(exp->type).name()){
+        errorMismatch(yylineno);
+        exit(1);
+    }
+
 }
 
-void insertVarToTable(Type* type,Id* id){
-    //TODO:insert to table the id with the new Type :)
+void insertVarToTable(Id* id){
+    symbolTable.back()->addVariable(id);
+    //TODO insert to offsets
+}
+
+void handleTypeDecl(Type* type,Id* id){
+    id->updateType(type);
+    insertVarToTable(id);
+
+}
+
+Id* extractIdFromSymbolTable(Id* id){
+    Id* updatedId=symbolTable.back()->getVariable(id);
+    if(NULL==id){
+
+    }
 }

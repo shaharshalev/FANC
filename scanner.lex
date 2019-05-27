@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "output.hpp"
-#include "parser.hpp"
+#include "fanC.hpp"
 #include "parser.tab.hpp"
 #define YYSTYPE Node*
 %}
