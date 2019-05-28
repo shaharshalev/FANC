@@ -29,12 +29,17 @@ bool isSameType(InstanceType1 *instance1, InstanceType2 *instance2) {
 enum BoolOp {
     And, Or
 };
+
 enum WhileOp {
     Break, Continue
 };
 
-class Relop;
+enum IdentifierType{
+    Variable, Function
+};
 
+class Relop;
+class Id;
 class BooleanOperation;
 
 
@@ -47,6 +52,7 @@ class ReturnType : public Node {
 public:
     virtual string typeName()=0;
     virtual ~ReturnType() {}
+
 };
 
 class StringType : public ReturnType{
@@ -66,7 +72,10 @@ class Expression : public Node {
 public:
     ReturnType *type;
 
+
     Expression(ReturnType *_type) : type(_type) {}
+
+    virtual Id* isPreconditionable()=0;
 
     virtual ~Expression() {
         delete type;
@@ -111,6 +120,13 @@ public:
     Expression *rightExp;
     Operation *op;
 
+    Id* isPreconditionable(){
+        Id *id =leftExp->isPreconditionable();
+        if( id!= NULL) return id;
+        id = rightExp->isPreconditionable();
+        return id;
+    }
+
     BinaryExpression(Expression *_leftExp, Expression *_rightExp, Operation *_op)
             : Expression(new Type()), leftExp(_leftExp), rightExp(_rightExp), op(_op) {
         if (isInstanceOf<Relop>(_op) || isInstanceOf<BooleanOperation>(_op)) {
@@ -147,6 +163,10 @@ public:
     Expression *exp;
 
     Not(Expression *_exp) : UnaryExpression(new BooleanType()), exp(_exp) {}
+
+    Id* isPreconditionable(){
+        return NULL;
+    }
 
     virtual ~Not() {
         delete (exp);
@@ -201,6 +221,10 @@ public:
 
     Boolean(bool val) : UnaryExpression(new BooleanType()), value(val) {}
 
+    Id* isPreconditionable(){
+        return NULL;
+    }
+
     virtual ~Boolean() {}
 };
 
@@ -208,15 +232,34 @@ class Id : public UnaryExpression {
 public:
     string name;
     int offset;
+    IdentifierType idType;
     friend bool operator==(const Id& ,const Id& );
     friend bool operator!=(const Id& ,const Id& );
 
-    Id(string text) : UnaryExpression(new Type()), name(text) {}
+    Id(string text) : UnaryExpression(new Type()), name(text),idType(Variable) {}
 
+    Id(Id* id):UnaryExpression(id->type) {
+            name = id->name;
+            offset = id->offset;
+            idType = id->idType;
+    }
+
+    Id* isPreconditionable(){
+        if(offset<0)return NULL;
+        return this;
+    }
+
+    Id* changeIdTypeToFunction(){
+        idType=Function;
+        return this;
+    }
     Id* updateType(Type* t){
         delete this->type;
         this->type = t;
         return this;
+    }
+    bool isFunction(){
+        return idType==Function;
     }
 
     virtual ~Id() {}
@@ -229,6 +272,10 @@ public:
 
     String(string text) : UnaryExpression(new StringType()), value(text) {}
 
+    Id* isPreconditionable(){
+        return NULL;
+    }
+
     virtual ~String() {}
 };
 
@@ -239,6 +286,10 @@ public:
     Number(string text, Type *_type) : UnaryExpression(_type), value(atoi(text.c_str())) {}
 
     Number(int val, Type *_type) : UnaryExpression(_type), value(val) {}
+
+    Id* isPreconditionable(){
+        return NULL;
+    }
 
     virtual ~Number() {}
 
@@ -292,10 +343,12 @@ public:
         add(formalDec);
     }
 
-    FormalList *add(FormalDec *formalDec) {
+    FormalList* add(FormalDec *formalDec) {
             decelerations.insert(decelerations.begin(), formalDec);
         return this;
     }
+
+    int size(){return decelerations.size(); }
 
     virtual ~FormalList() {}
 };
@@ -305,6 +358,10 @@ public:
     Expression *exp;
 
     PreCondition(Expression *_exp) : exp(_exp) {}
+
+    Id* isExpressionValid(){
+        return exp->isPreconditionable();
+    }
 
     virtual ~PreCondition() {
         delete exp;
@@ -324,6 +381,17 @@ public:
 
     int size() {
         return preconditions.size();
+    }
+
+    Id* isValid(){
+        vector<PreCondition *>::iterator it=preconditions.begin();
+        while(it!=preconditions.end()){
+            Id *i = (*it)->isExpressionValid();
+            if(i!=NULL)
+                return i;
+            ++it;
+        }
+        return NULL;
     }
 
     virtual ~PreConditions() {
@@ -378,6 +446,7 @@ public:
                                           conditions(_conditions) {}
 
 
+
     vector<string>* getArgsAsString(){
         vector<FormalDec *>::iterator it = this->arguments->decelerations.begin();
         vector<string>* typesName = new vector<string>();
@@ -422,6 +491,17 @@ public:
     Call(ReturnType *_returnType, Id *_id, ExpressionList *_expressions)
             : UnaryExpression(_returnType),id(_id), expressions(_expressions) {}
 
+    Id* isPreconditionable(){
+        vector<Expression*>::iterator it=expressions->expressions.begin();
+        while(it!=expressions->expressions.end()){
+            Id* i=(*it)->isPreconditionable();
+            if(NULL!=i)
+                return i;
+            ++it;
+        }
+        return NULL;
+    }
+
     virtual ~Call() {
         delete expressions;
         delete id;
@@ -438,16 +518,22 @@ public:
     }
     Scope(Scope* _parent):parent(_parent){}
 
+
     void addVariable(Id* id){
         variables.push_back(id);
     }
     void addFunction(FuncDec* func){
         functions.push_back(func);
+        Id * i = new Id(func->id);
+        variables.push_back(i->changeIdTypeToFunction());
+
     }
+
 private:
     bool isFunctionExistInScope(FuncDec* func){
         return functions.end() != std::find(functions.begin(), functions.end(), func);
     }
+
 
     FuncDec* getFunctionInScope(Id* id){
 
@@ -497,7 +583,7 @@ private:
 
 public:
     /**
-     * the method gets a variable from this scope or parents scopes.
+     * the method gets a variable/function Id from this scope or parents scopes.
      * @param id
      * @return the id from the symbolTable, NULL if no such id exist
      */
@@ -512,13 +598,24 @@ public:
         }
     }
 
+    void printIds(){
+        for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
+            if((*it)->isFunction()){
+                FuncDec* fun = getFunction(*it);
+                vector<string>* args=fun->getArgsAsString();
+                string func_type=makeFunctionType(fun->returnType->typeName(), *args);
+                delete args;
+                output::printID((*it)->name,0,func_type);
+            }else {
+                output::printID((*it)->name, (*it)->offset, (*it)->type->typeName());
+            }
+        }
+    }
+
 
     virtual void endScope() {
         output::endScope();
-        for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
-            //todo: also print for functions should be in the same list :(
-            output::printID((*it)->name,(*it)->offset,(*it)->type->typeName());
-        }
+        printIds();
 
     }
 
@@ -532,7 +629,7 @@ public:
 
     }
 
-};
+};//End of class Scope
 
 
 class WhileScope : public Scope {
@@ -546,12 +643,18 @@ public:
 class FunctionScope : public Scope {
 public:
     FuncDec* func;
+
     FunctionScope(Scope* _parent):Scope(_parent){}
+
     void updateFunctionScope(FuncDec* _func){
         func=_func;
         if(NULL != this->parent)
             parent->addFunction(_func);
     }
+    void updateFunctionScope(PreConditions* preconditions){
+        func->conditions=preconditions;
+    }
+
     FuncDec* getFunction(){
         return func;
     }
@@ -559,14 +662,10 @@ public:
     void endScope()  {
         output::endScope();
         output::printPreconditions(func->id->name,func->conditions->size());
-        for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
-            //todo: also print for functions should be in the same list :(
-            output::printID((*it)->name,(*it)->offset,(*it)->type->typeName());
-        }
-
-
+        printIds();
     }
     virtual ~FunctionScope(){
+
     }
 };
 
