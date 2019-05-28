@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "output.hpp"
-#include "parser.hpp"
+#include "fanC.hpp"
 #include "parser.tab.hpp"
 #define YYSTYPE Node*
 %}
@@ -14,7 +14,7 @@
 %option yylineno
 %option noyywrap
 whitespace 			([\x20\x09\x0A\x0D])
-comment             (\/\/.*)
+
 
 
 
@@ -52,8 +52,7 @@ comment             (\/\/.*)
 (0|[1-9][0-9]*)						{yylval = new Number(yytext,new Type());return NUM;}
 \"([^\n\r\"\\]|\\[rnt"\\])+\"		{yylval = new String(yytext); return STRING;}
 {whitespace}						;
-<<EOF>>								exit(0);
-{comment}                           ;
+<<EOF>>								;
 .									{errorLex(yylineno);exit(0);}
 
 

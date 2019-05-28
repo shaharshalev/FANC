@@ -3,10 +3,9 @@
 	#define YYERROR_VERBOSE 1
 	#include <iostream>
 	#include <stdlib.h>
-	#include "parser.hpp"
+	#include "fanC.hpp"
 	#include "output.hpp"
 	#include <assert.h>     /* assert */
-	#include <stdio.h>
 	extern int yylineno;
 	int yyerror(const char * message);
 	int yylex();
@@ -229,7 +228,6 @@ EndScope: /*epsilon*/ {
 
 int main(){
 	//yydebug=1 // uncomment this inorder to debug
-	freopen ("hw3-tests/t1.in","r",stdin);
 	return yyparse();
 }
 int yyerror(const char * message){
