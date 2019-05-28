@@ -45,11 +45,19 @@ public:
 
 class ReturnType : public Node {
 public:
+    virtual string typeName(){return "";}
     virtual ~ReturnType() {}
+};
+
+class StringType : public ReturnType{
+public:
+    virtual string typeName(){return "STRING";}
+    virtual ~StringType() {}
 };
 
 class Type : public ReturnType {
 public:
+    virtual string typeName(){return "";}
     virtual ~Type() {}
 };
 
@@ -67,23 +75,26 @@ public:
 
 class Void : public ReturnType {
 public:
-
+    virtual string typeName(){return "VOID";}
     virtual ~Void() {
     }
 };
 
 class IntType : public Type {
 public:
+    virtual string typeName(){return "INT";}
     virtual ~IntType() {}
 };
 
 class ByteType : public Type {
 public:
+    virtual string typeName(){return "BYTE";}
     virtual ~ByteType() {}
 };
 
 class BooleanType : public Type {
 public:
+    virtual string typeName(){return "BOOL";}
     virtual ~BooleanType() {}
 };
 
@@ -216,7 +227,7 @@ class String : public UnaryExpression {
 public:
     string value;
 
-    String(string text) : UnaryExpression(new Type()), value(text) {}
+    String(string text) : UnaryExpression(new StringType()), value(text) {}
 
     virtual ~String() {}
 };
@@ -371,7 +382,7 @@ public:
         vector<FormalDec *>::iterator it = this->arguments->decelerations.begin();
         vector<string>* typesName = new vector<string>();
         while(it != arguments->decelerations.end()){
-            typesName->push_back(typeid((*it)->type).name());
+            typesName->push_back((*it)->type->typeName());
             ++it;
         }
         return typesName;
@@ -546,9 +557,13 @@ public:
     }
 
     void endScope()  {
-        //TODO
         output::endScope();
         output::printPreconditions(func->id->name,func->conditions->size());
+            for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
+
+                output::printID((*it)->name,(*it)->offset,(*it)->type->typeName());
+            }
+
 
     }
     virtual ~FunctionScope(){

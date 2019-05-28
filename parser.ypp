@@ -14,7 +14,6 @@
 	void validateWhile(WhileOp op);
     bool inWhile();
     void validateFunctionReturnType(Expression* exp);
-    void validateCall(Call* call);
     void validateAssignment(Id* id,Expression* exp);
     void insertVarToTable(Id* id);
     void handleTypeDecl(Type* type,Id* id);
