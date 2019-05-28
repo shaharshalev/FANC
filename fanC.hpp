@@ -45,7 +45,7 @@ public:
 
 class ReturnType : public Node {
 public:
-    virtual string typeName(){return "";}
+    virtual string typeName()=0;
     virtual ~ReturnType() {}
 };
 
@@ -57,7 +57,7 @@ public:
 
 class Type : public ReturnType {
 public:
-    virtual string typeName(){return "";}
+    virtual string typeName(){return "Error<typeName method was called from Type class>";}
     virtual ~Type() {}
 };
 
@@ -393,7 +393,7 @@ public:
         vector<Expression *>::iterator expIt = expList->expressions.begin();
         vector<FormalDec *>::iterator formalIt = this->arguments->decelerations.begin();
         while( (expIt != expList->expressions.end()) && (formalIt != arguments->decelerations.end())){
-            if(typeid((*expIt)->type).name() != typeid((*formalIt)->type).name()) return false;
+            if((*expIt)->type->typeName() != (*formalIt)->type->typeName()) return false;
             ++expIt;
             ++formalIt;
         }
@@ -515,7 +515,10 @@ public:
 
     virtual void endScope() {
         output::endScope();
-        //TODO
+        for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
+            //todo: also print for functions should be in the same list :(
+            output::printID((*it)->name,(*it)->offset,(*it)->type->typeName());
+        }
 
     }
 
@@ -535,9 +538,6 @@ public:
 class WhileScope : public Scope {
 public:
     WhileScope(Scope* _parent):Scope(_parent){}
-    void endScope()  {
-        //TODO
-    }
     virtual ~WhileScope(){
 
     }
@@ -559,10 +559,10 @@ public:
     void endScope()  {
         output::endScope();
         output::printPreconditions(func->id->name,func->conditions->size());
-            for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
-
-                output::printID((*it)->name,(*it)->offset,(*it)->type->typeName());
-            }
+        for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
+            //todo: also print for functions should be in the same list :(
+            output::printID((*it)->name,(*it)->offset,(*it)->type->typeName());
+        }
 
 
     }

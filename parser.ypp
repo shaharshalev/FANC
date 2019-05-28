@@ -267,7 +267,7 @@ void validateFunctionReturnType(Expression* exp){
     FuncDec* func=getFunction();
     if( (NULL == func)
     ||(exp==NULL && !isInstanceOf<Void>(func->returnType))
-    ||(exp!=NULL && typeid(exp->type).name()!= typeid(func->returnType).name())){
+    ||(exp!=NULL && (exp->type->typeName()!= func->returnType->typeName()))){
         errorMismatch(yylineno);
         exit(1);
     }
@@ -298,7 +298,7 @@ Call* handleCall(Id* id,ExpressionList* expList){
 ** this function assume that id type is updated.
 */
 void validateAssignment(Id* id,Expression* exp){
-    if(typeid(id->type).name() !=  typeid(exp->type).name()){
+    if(id->type->typeName() !=  exp->type->typeName()){
         errorMismatch(yylineno);
         exit(1);
     }
