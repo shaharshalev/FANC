@@ -187,16 +187,17 @@ OpenWhileScope: /*epsilon*/ {
 }
 ;
 
-
-
-/* todo: check there is one main with void and no args*/
-
 OpenScope: /*epsilon*/ {
     if(symbolTable.empty()){
         assert(offsets.empty());
         symbolTable.push_back(new Scope(NULL));
         offsets.push_back(0);
-        /*TODO : insert print and iprint*/
+        FormalList* printArguments=new FormalList(new FormalDec(new StringType(),NULL));
+        FuncDec* printDec=new FuncDec(new Void(),new Id("print",new Void(),FunctionType),printArguments ,NULL);
+        symbolTable.back()->addFunction(printDec);
+        FormalList* printIArguments=new FormalList(new FormalDec(new IntType(),NULL));
+        FuncDec* printIDec=new FuncDec(new Void(),new Id("printi",new Void(),FunctionType),printIArguments ,NULL);
+        symbolTable.back()->addFunction(printIDec);
     }else{
         symbolTable.push_back(new Scope(symbolTable.back()));
         offsets.push_back(offsets.back());

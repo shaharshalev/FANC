@@ -35,7 +35,7 @@ enum WhileOp {
 };
 
 enum IdentifierType{
-    Variable, Function
+    VariableType, FunctionType
 };
 
 class Relop;
@@ -55,11 +55,7 @@ public:
 
 };
 
-class StringType : public ReturnType{
-public:
-    virtual string typeName(){return "STRING";}
-    virtual ~StringType() {}
-};
+
 
 class Type : public ReturnType {
 public:
@@ -67,6 +63,11 @@ public:
     virtual ~Type() {}
 };
 
+class StringType : public Type{
+        public:
+        virtual string typeName(){return "STRING";}
+        virtual ~StringType() {}
+};
 
 class Expression : public Node {
 public:
@@ -236,7 +237,10 @@ public:
     friend bool operator==(const Id& ,const Id& );
     friend bool operator!=(const Id& ,const Id& );
 
-    Id(string text) : UnaryExpression(new Type()), name(text),idType(Variable) {}
+    Id(string text) : UnaryExpression(new Type()), name(text),idType(VariableType) {}
+
+    Id(string text,ReturnType* _type,IdentifierType _idType) : UnaryExpression(_type),
+    name(text),idType(_idType) {}
 
     Id(Id* id):UnaryExpression(id->type) {
             name = id->name;
@@ -250,7 +254,7 @@ public:
     }
 
     Id* changeIdTypeToFunction(){
-        idType=Function;
+        idType=FunctionType;
         return this;
     }
     Id* updateType(Type* t){
@@ -259,7 +263,7 @@ public:
         return this;
     }
     bool isFunction(){
-        return idType==Function;
+        return idType==FunctionType;
     }
 
     virtual ~Id() {}
@@ -523,9 +527,10 @@ public:
         variables.push_back(id);
     }
     void addFunction(FuncDec* func){
+        func->id->changeIdTypeToFunction();
         functions.push_back(func);
         Id * i = new Id(func->id);
-        variables.push_back(i->changeIdTypeToFunction());
+        variables.push_back(i);
 
     }
 
