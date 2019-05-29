@@ -4,33 +4,13 @@
 	#include <iostream>
 	#include <stdlib.h>
 	#include "parser.hpp"
+	#include "main.hpp"
 	#include "output.hpp"
-	#include <assert.h>     /* assert */
 	#include <stdio.h>
 	extern int yylineno;
+	extern int yylex();
 	int yyerror(const char * message);
-	int yylex();
-	void handleWhile(Expression* exp);
-	void validateExpIsBool(Expression* exp);
-	void validateWhile(WhileOp op);
-    bool inWhile();
-    void validateFunctionReturnType(Expression* exp);
-    void validateAssignment(Id* id,Expression* exp);
-    void insertVarToTable(Id* id);
-    void handleTypeDecl(Type* type,Id* id);
-    Id* extractIdFromSymbolTable(Id* id);
-    void assignToVar(Id* id,Expression* exp);
-    void handleIf(Expression* exp);
-    FuncDec* getFunction();
-    void handleArgumentDecl(FormalList* formalList);
-    Call* handleCall(Id* id,ExpressionList* expList);
-    void assertIdentifierNotExists(Id* id);
-    void handleIDExpression(Id* id);
-    void validateMain(Id* id,FormalList* formals,ReturnType* returnType);
-
-	vector<Scope*> symbolTable;
-	vector<int> offsets;
-	bool isMainExist=false;
+	using namespace FanC;
 %}
 
 %left ASSIGN
@@ -70,11 +50,8 @@
 %%
 
 Program:	OpenScope Funcs	{
-    if(!isMainExist){
-        errorMainMissing();
-        exit(1);
-    }
-    symbolTable.back()->endScope();
+    reduceProgram();
+
 }
 ;
 
@@ -82,29 +59,20 @@ Funcs: /*epsilon*/ {}
 	| FuncDecl Funcs	{} 
 ;
 
-FuncDecl:	FuncDeclSignature PreConditionsDecl LBRACE  Statements RBRACE {symbolTable.back()->endScope();}
+FuncDecl:	FuncDeclSignature PreConditionsDecl LBRACE  Statements RBRACE {reduceFuncDecl();}
 ;
 
 FuncDeclSignature:OpenFunctionScope RetType ID LPAREN Formals RPAREN  {
      ReturnType* returnType=dynamic_cast<ReturnType*>($2);
      Id* id=dynamic_cast<Id*>($3);
      FormalList* formals=dynamic_cast<FormalList*>($5);
-     assertIdentifierNotExists(id);
-     validateMain(id,formals,returnType);
-     FunctionScope* functionScope=dynamic_cast<FunctionScope*>(symbolTable.back());
-     functionScope->updateFunctionScope(new FuncDec(returnType,id,formals,NULL));
+     reduceFuncDeclSignature(returnType,id,formals);
 }
 ;
 
 PreConditionsDecl: PreConditions {
      PreConditions* preconditions=dynamic_cast<PreConditions*>($1);
-     Id * i = preconditions->isValid();
-     if(i!=NULL){
-        errorUndef(yylineno,i->name);
-        exit(1);
-     }
-     FunctionScope* functionScope=dynamic_cast<FunctionScope*>(symbolTable.back());
-     functionScope->updateFunctionScope(preconditions);
+     reducePreConditionsDecl(preconditions);
 };
 
 RetType:	Type {$$ = $1;}
@@ -116,19 +84,19 @@ Formals:	/*epsilon*/ {$$ = new FormalList();}
 ;
 
 FormalsList:	FormalDecl	{$$=new FormalList((FormalDec*)$1);}
-	|	FormalDecl	COMMA FormalsList {$$=((FormalList*)$3)->add((FormalDec*)$1);}
+	|	FormalDecl	COMMA FormalsList {$$=(((FormalList*)$3)->add((FormalDec*)$1));}
 ;
 
 FormalDecl:	Type ID {
     Type* type=(Type*)$1;
     Id* id=(Id*)$2;
-    id->updateType(type);
+    reduceFormalDecl(type,id);
     $$=new FormalDec(type,id);
 }
 ;
 
 PreConditions:	/*epsilon*/ {$$=new PreConditions();}
-	|	PreConditions PreCondition {$$=((PreConditions*)$1)->add((PreCondition*)$2);}
+	|	PreConditions PreCondition {$$=reducePreConditions((PreConditions*)$1,(PreCondition*)$2);}
 ;
 
 PreCondition:	PRECOND LPAREN Exp RPAREN {validateExpIsBool((Expression*)$3); $$=new PreCondition((Expression*)$3);}
@@ -138,7 +106,7 @@ Statements: Statement	{}
 	|	Statements Statement {}
 ;
 
-Statement: LBRACE OpenScope Statements RBRACE	{symbolTable.back()->endScope();}
+Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();}
 	|	Type ID	SC	{handleTypeDecl((Type*)$1,(Id*)$2);}
 	|	Type ID ASSIGN Exp SC	{handleTypeDecl((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4); delete $4;}
 	|	ID ASSIGN Exp SC	{assignToVar((Id*)$1,(Expression*)$3);}
@@ -182,254 +150,29 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 	|	Exp EQUALITY Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);}
 ;
 
-OpenWhileScope: /*epsilon*/ {
-    symbolTable.push_back(new WhileScope(symbolTable.back()));
-    offsets.push_back(offsets.back());
-}
+OpenWhileScope: /*epsilon*/ {reduceOpenWhileScope();}
 ;
 
-OpenScope: /*epsilon*/ {
-    if(symbolTable.empty()){
-        assert(offsets.empty());
-        symbolTable.push_back(new Scope(NULL));
-        offsets.push_back(0);
-        FormalList* printArguments=new FormalList(new FormalDec(new StringType(),NULL));
-        FuncDec* printDec=new FuncDec(new Void(),new Id("print",new Void(),FunctionType),printArguments ,NULL);
-        symbolTable.back()->addFunction(printDec);
-        FormalList* printIArguments=new FormalList(new FormalDec(new IntType(),NULL));
-        FuncDec* printIDec=new FuncDec(new Void(),new Id("printi",new Void(),FunctionType),printIArguments ,NULL);
-        symbolTable.back()->addFunction(printIDec);
-    }else{
-        symbolTable.push_back(new Scope(symbolTable.back()));
-        offsets.push_back(offsets.back());
-    }
-}
+OpenScope: /*epsilon*/ {reduceOpenScope();}
 ;
 
-OpenFunctionScope: {
-    symbolTable.push_back(new FunctionScope(symbolTable.back()));
-    offsets.push_back(offsets.back());
-}
+OpenFunctionScope: /*epsilon*/ {reduceOpenFunctionScope();}
 ;
 
-EndScope: /*epsilon*/ {
-    Scope* currentScope = symbolTable.back();
-    symbolTable.pop_back();
-    offsets.pop_back();
-    currentScope->endScope();
-    delete currentScope;
-}
+EndScope: /*epsilon*/ {reduceEndScope();}
 ;
-
-
-
 
 
 %%
 
+/* Code Section */
+
 int main(){
-	//yydebug=1 // uncomment this inorder to debug
-	freopen ("hw3-tests/t1.in","r",stdin);
-	return yyparse();
+    //yydebug=1 // uncomment this inorder to debug
+    //freopen ("hw3-tests/t1.in","r",stdin);
+    return yyparse();
 }
 int yyerror(const char * message){
-	errorSyn(yylineno);
-	exit(1);
-}
-
-void validateMain(Id* id ,FormalList* formals ,ReturnType* returnType){
-    if(id->name == "main"){
-        if(returnType->typeName() != "VOID" || formals->size() != 0){
-            errorMismatch(yylineno);
-            exit(1);
-            //todo validate error
-           }
-           if(isMainExist) {
-               errorDef(yylineno,"main");
-               exit(1);
-           }
-           isMainExist = true;
-       }
-
-   }
-
-void validateWhile(WhileOp op){
-    if(inWhile()){
-        switch(op){
-            case Break:
-                errorUnexpectedBreak(yylineno);
-            break;
-            case Continue:
-                errorUnexpectedContinue(yylineno);
-            break;
-        }
-    }
-}
-void validateExpIsBool(Expression* exp){
-  if(!isInstanceOf<BooleanType>(exp)){
-       errorMismatch(yylineno);
-       exit(1);
-  }
-}
-
-void handleWhile(Expression* exp){
-    validateExpIsBool(exp);
-    symbolTable.back()->endScope();
-    delete exp;
-}
-
-bool inWhile(){
-    for(vector<Scope*>::reverse_iterator i = symbolTable.rbegin();i != symbolTable.rend(); ++i){
-        Scope* scope=*i;
-        if(isInstanceOf<WhileScope>(scope)) return true;
-    }
-    return false;
-}
-/**
-* The function returns the function of the scope that we are in.
-* null is returned if we are not in a function.
-*/
-FuncDec* getFunction(){
- for(vector<Scope*>::reverse_iterator i = symbolTable.rbegin();i != symbolTable.rend(); ++i){
-        Scope* scope=*i;
-        if(isInstanceOf<FunctionScope>(scope)) {
-            FunctionScope* functionScope = dynamic_cast<FunctionScope*>(scope);
-            return functionScope->getFunction();
-        }
-    }
-    return NULL;
-}
-
-
-/**
-* this function validates that we return from a function
-* and the expression is of the same type as the function returned type.
-*/
-void validateFunctionReturnType(Expression* exp){
-    FuncDec* func=getFunction();
-    if( (NULL == func)
-    ||(exp==NULL && !isInstanceOf<Void>(func->returnType))
-    ||(exp!=NULL && (exp->type->typeName()!= func->returnType->typeName()))){
-        errorMismatch(yylineno);
-        exit(1);
-    }
-    if(exp!=NULL)
-        delete exp;
-}
-
-Call* handleCall(Id* id,ExpressionList* expList){
-    FuncDec* func=symbolTable.back()->getFunction(id);
-
-    if(NULL == func){
-        errorUndefFunc(yylineno,id->name);
-        exit(1);
-    }
-
-    if(!func->isArgumentListMatch(expList)){
-        vector<string>* strVec = func->getArgsAsString();
-        vector<string>& v = *strVec;
-        errorPrototypeMismatch(yylineno,id->name,v);
-        delete strVec;
-        exit(1);
-    }
-    return new Call(func->returnType,id,expList);
-}
-
-/*
-**this function validate assignment to id by comparing exp type.
-** this function assume that id type is updated.
-*/
-void validateAssignment(Id* id,Expression* exp){
-    if(id->type->typeName() !=  exp->type->typeName()){
-        errorMismatch(yylineno);
-        exit(1);
-    }
-
-}
-
-void assertIdentifierNotExists(Id *id){
-     Scope * scope = symbolTable.back();
-     if(scope->getVariable(id)!=NULL){
-        errorDef(yylineno, id->name);
-        exit(1);
-     }
-}
-
-void insertVarToTable(Id* id){
-    assertIdentifierNotExists(id);
-    int newOffset=offsets.back();
-    offsets.pop_back();
-    offsets.push_back(newOffset+1);
-    id->offset=newOffset;
-    symbolTable.back()->addVariable(id);
-}
-
-void handleTypeDecl(Type* type,Id* id){
-    id->updateType(type);
-    insertVarToTable(id);
-
-}
-
-void handleArgumentDecl(FormalList* formalList){
-
-     int offset=-1;
-     vector<FormalDec *>::iterator it=formalList->decelerations.begin();
-     while(formalList->decelerations.end() != it){
-        FormalDec* formalDec=*it;
-        Id* id= new Id(formalDec->id);
-        id->offset=offset;
-        symbolTable.back()->addVariable(id);
-        --offset;
-        ++it;
-     }
-}
-/**
-** This function extracts the id from symbol table.
-** if id does not exist the function will exit with error
-*/
-Id* extractIdFromSymbolTable(Id* id){
-    Id* i=symbolTable.back()->getVariable(id);
-    if(NULL==i){
-        errorUndef(yylineno,id->name);
-        exit(1);
-    }
-    return i;
-}
-
-void handleIDExpression(Id* id){
-    Id* idFromSymbolTable=extractIdFromSymbolTable(id);
-    id->offset=idFromSymbolTable->offset;
-}
-
-void assignToVar(Id* id,Expression* exp){
-    Id* idFromSymbolTable=extractIdFromSymbolTable(id);
-    if(idFromSymbolTable->isFunction()){
-        errorUndef(yylineno,id->name);
-        exit(1);
-    }
-    validateAssignment(idFromSymbolTable,exp);
-    delete id;
-    delete exp;
-}
-
-void handleIf(Expression* exp){
-    validateExpIsBool(exp);
-    symbolTable.back()->endScope();
-    delete exp;
-}
-
-
-
-bool operator==(const Id& a,const Id& b){
-    return a.name==b.name;
-}
-bool operator!=(const Id& a,const Id& b){
-    return a.name!=b.name;
-}
-
-bool operator==(const FuncDec& a,const FuncDec& b){
-    return a.id==b.id;
-}
-bool operator!=(const FuncDec& a,const FuncDec& b){
-    return a.id!=b.id;
+    errorSyn(yylineno);
+    exit(1);
 }

@@ -8,7 +8,7 @@
 #include "output.hpp"
 #include "parser.hpp"
 #include "parser.tab.hpp"
-#define YYSTYPE Node*
+using namespace FanC;
 %}
 
 %option yylineno
