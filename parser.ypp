@@ -169,10 +169,12 @@ EndScope: /*epsilon*/ {reduceEndScope();}
 
 int main(){
     //yydebug=1 // uncomment this inorder to debug
-    //freopen ("hw3-tests/t1.in","r",stdin);
+    freopen ("t1.in","r",stdin);
     return yyparse();
 }
 int yyerror(const char * message){
     errorSyn(yylineno);
     exit(1);
 }
+
+

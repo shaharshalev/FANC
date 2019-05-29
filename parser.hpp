@@ -8,7 +8,6 @@
 #include <sstream>
 #include <stdbool.h>
 #include <stdlib.h>     /* atoi */
-#include <algorithm>    // std::find
 #include "output.hpp"
 
 using namespace std;
@@ -43,8 +42,6 @@ namespace FanC{
     enum IdentifierType{
         VariableType, FunctionType
     };
-
-
 
     class Node {
     public:
@@ -539,14 +536,22 @@ namespace FanC{
 
     private:
         bool isFunctionExistInScope(FuncDec* func){
-            return functions.end() != std::find(functions.begin(), functions.end(), func);
+            vector<FuncDec*>::iterator it=functions.begin();
+            while(it!=functions.end()){
+                FuncDec* currentFunc=*it;
+                if(*func == *currentFunc)
+                    return true;
+                ++it;
+            }
+            return false;
         }
 
 
         FuncDec* getFunctionInScope(Id* id){
 
             for (vector<FuncDec *>::iterator it = functions.begin(); it != functions.end(); ++it) {
-                if( (*it)->id == id){
+                Id currentId=*((*it)->id);
+                if( currentId == *id){
                     return *it;
                 }
             }
@@ -581,12 +586,15 @@ namespace FanC{
         }
     private:
         Id* getVariableInScope(Id* id){
-            vector<Id *>::iterator it=std::find(variables.begin(), variables.end(), id);
-            if(it!= variables.end()){
-                return *it;
-            }else{
-                return NULL;
+
+            vector<Id *>::iterator it=variables.begin();
+            while( it!= variables.end()){
+                Id* currentId= *it;
+                if(*id==*currentId)
+                    return *it;
+                ++it;
             }
+            return NULL;
         }
 
     public:
@@ -676,6 +684,7 @@ namespace FanC{
 
         }
     };
+    
 }
 
 #endif //_PARSER_H
