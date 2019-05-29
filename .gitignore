@@ -1,3 +1,4 @@
+*.stackdump
 .vscode/
 .idea/
 cmake-build-debug/
