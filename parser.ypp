@@ -9,7 +9,7 @@
 	#include <stdio.h>
 	extern int yylineno;
 	extern int yylex();
-	int yyerror(const char * message);
+
 	using namespace FanC;
 %}
 
@@ -84,7 +84,7 @@ Formals:	/*epsilon*/ {$$ = new FormalList();}
 ;
 
 FormalsList:	FormalDecl	{$$=new FormalList((FormalDec*)$1);}
-	|	FormalDecl	COMMA FormalsList {$$=(((FormalList*)$3)->add((FormalDec*)$1));}
+	|	FormalDecl	COMMA FormalsList {$$=reduceFormalsList((FormalList*)$3,(FormalDec*)$1);}
 ;
 
 FormalDecl:	Type ID {
@@ -172,9 +172,6 @@ int main(){
     freopen ("t1.in","r",stdin);
     return yyparse();
 }
-int yyerror(const char * message){
-    errorSyn(yylineno);
-    exit(1);
-}
+
 
 

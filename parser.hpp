@@ -129,7 +129,7 @@ namespace FanC{
         }
 
         BinaryExpression(Expression *_leftExp, Expression *_rightExp, Operation *_op)
-                : Expression(new Type()), leftExp(_leftExp), rightExp(_rightExp), op(_op) {
+                : Expression(NULL), leftExp(_leftExp), rightExp(_rightExp), op(_op) {
             if (isInstanceOf<Relop>(_op) || isInstanceOf<BooleanOperation>(_op)) {
                 this->type = new BooleanType();
             } else {
@@ -328,7 +328,8 @@ namespace FanC{
         Type* type;
         Id* id;
 
-        FormalDec(Type *_type, Id *_id) : type(_type), id(_id) {}
+        FormalDec(Type *_type, Id *_id) : type(_type), id(_id) {
+        }
 
         virtual ~FormalDec() {
             delete type;
@@ -466,7 +467,9 @@ namespace FanC{
             vector<Expression *>::iterator expIt = expList->expressions.begin();
             vector<FormalDec *>::iterator formalIt = this->arguments->decelerations.begin();
             while( (expIt != expList->expressions.end()) && (formalIt != arguments->decelerations.end())){
-                if((*expIt)->type->typeName() != (*formalIt)->type->typeName()) return false;
+                Expression* currentExp=*expIt;
+                FormalDec* currentArgument=*formalIt;
+                if(currentExp->type->typeName() != currentArgument->type->typeName()) return false;
                 ++expIt;
                 ++formalIt;
             }
@@ -550,8 +553,8 @@ namespace FanC{
         FuncDec* getFunctionInScope(Id* id){
 
             for (vector<FuncDec *>::iterator it = functions.begin(); it != functions.end(); ++it) {
-                Id currentId=*((*it)->id);
-                if( currentId == *id){
+                FuncDec* currentFunc=*it;
+                if( *currentFunc->id == *id){
                     return *it;
                 }
             }

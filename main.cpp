@@ -161,7 +161,6 @@ namespace FanC {
             FormalDec *formalDec = *it;
             Id *id = new Id(formalDec->id);
             id->offset = offset;
-            id->type=formalDec->type;
             symbolTable.back()->addVariable(id);
             --offset;
             ++it;
@@ -199,7 +198,6 @@ namespace FanC {
     }
 
     void handleIf(Expression *exp) {
-        //TODO: fix that a var of bool type is also of type BoolType
         validateExpIsBool(exp);
         symbolTable.back()->endScope();
         delete exp;
@@ -290,6 +288,15 @@ namespace FanC {
 
     void reduceStatement() {
         symbolTable.back()->endScope();
+    }
+
+    int yyerror(const char * message){
+        errorSyn(yylineno);
+        exit(1);
+    }
+
+    FormalList *reduceFormalsList(FormalList *formalList, FormalDec *formalDec) {
+        return formalList->add(formalDec);
     }
 
 

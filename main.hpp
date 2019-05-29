@@ -15,6 +15,7 @@ namespace FanC {
     void reduceOpenScope();
     void reduceOpenFunctionScope();
     void reduceEndScope();
+    FormalList* reduceFormalsList(FormalList* formalList,FormalDec* formalDec);
     PreConditions *reducePreConditions(PreConditions *preConditions,PreCondition* precondition);
 
     void validateExpIsBool(Expression *exp);
@@ -48,5 +49,6 @@ namespace FanC {
     void handleIDExpression(Id *id);
 
     void validateMain(Id *id, FormalList *formals, ReturnType *returnType);
+    int yyerror(const char * message);
 }
 #endif //HW3_MAIN_H
