@@ -113,8 +113,8 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();}
 	|	Call SC	{delete $1; }
 	|	RETURN SC	{validateFunctionReturnType(NULL);}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);}
-	|	IF LPAREN Exp RPAREN OpenScope Statement ELSE EndScope OpenScope Statement 	{handleIf((Expression*)$3);}
-	|	IF LPAREN Exp RPAREN OpenScope Statement %prec IFPREC {handleIf((Expression*)$3);/* move handling if before reduce!!*/}
+	|	IF  IfOpenScope Statement ELSE EndScope OpenScope Statement 	{reduceIf((Expression*)$3);}
+	|	IF  IfOpenScope Statement %prec IFPREC {reduceIf((Expression*)$3);}
 	|	WHILE LPAREN Exp RPAREN OpenWhileScope Statement	{handleWhile((Expression*)$3);}
 	|	BREAK SC	{validateWhile(Break);}
 	|	CONTINUE SC	{validateWhile(Continue);}
@@ -154,6 +154,9 @@ OpenWhileScope: /*epsilon*/ {reduceOpenWhileScope();}
 ;
 
 OpenScope: /*epsilon*/ {reduceOpenScope();}
+;
+
+IfOpenScope: LPAREN Exp RPAREN  {handleIf((Expression*)$2);}
 ;
 
 OpenFunctionScope: /*epsilon*/ {reduceOpenFunctionScope();}

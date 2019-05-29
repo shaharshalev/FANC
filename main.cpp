@@ -299,5 +299,9 @@ namespace FanC {
         return formalList->add(formalDec);
     }
 
+    void reduceIf(Expression* exp) {
+        symbolTable.back()->endScope();
+    }
+
 
 }

@@ -17,6 +17,7 @@ namespace FanC {
     void reduceEndScope();
     FormalList* reduceFormalsList(FormalList* formalList,FormalDec* formalDec);
     PreConditions *reducePreConditions(PreConditions *preConditions,PreCondition* precondition);
+    void reduceIf(Expression* exp);
 
     void validateExpIsBool(Expression *exp);
 
