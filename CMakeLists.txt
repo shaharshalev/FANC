@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12) # Optional..
+cmake_minimum_required(VERSION 3.10.2) # Optional..
 project(hw3)
 
 set(CMAKE_CXX_STANDARD 14) # C++ 14 is needed for the following commands!
