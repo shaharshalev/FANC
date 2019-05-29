@@ -48,7 +48,7 @@ namespace FanC {
     }
 
     void validateExpIsBool(Expression *exp) {
-        if (!isInstanceOf<BooleanType>(exp)) {
+        if (!isInstanceOf<BooleanType>(exp->type)) {
             errorMismatch(yylineno);
             exit(1);
         }
@@ -161,6 +161,7 @@ namespace FanC {
             FormalDec *formalDec = *it;
             Id *id = new Id(formalDec->id);
             id->offset = offset;
+            id->type=formalDec->type;
             symbolTable.back()->addVariable(id);
             --offset;
             ++it;
@@ -182,6 +183,7 @@ namespace FanC {
 
     void handleIDExpression(Id *id) {
         Id *idFromSymbolTable = extractIdFromSymbolTable(id);
+        id->type= idFromSymbolTable->type;
         id->offset = idFromSymbolTable->offset;
     }
 
@@ -197,6 +199,7 @@ namespace FanC {
     }
 
     void handleIf(Expression *exp) {
+        //TODO: fix that a var of bool type is also of type BoolType
         validateExpIsBool(exp);
         symbolTable.back()->endScope();
         delete exp;
