@@ -2,6 +2,7 @@
 void printOk(bool isOk) {
     if (isOk) return;
 
+    isOk=false;
 }
 
 void main()

@@ -182,7 +182,7 @@ namespace FanC {
 
     void handleIDExpression(Id *id) {
         Id *idFromSymbolTable = extractIdFromSymbolTable(id);
-        id->type= idFromSymbolTable->type;
+        id->type= idFromSymbolTable->type->clone();
         id->offset = idFromSymbolTable->offset;
     }
 
@@ -200,7 +200,7 @@ namespace FanC {
     void handleIf(Expression *exp) {
         validateExpIsBool(exp);
         symbolTable.back()->endScope();
-        delete exp;
+        delete exp; //TODO: THE PROBLEM IS HERE
     }
 
 

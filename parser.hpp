@@ -51,22 +51,66 @@ namespace FanC{
     class ReturnType : public Node {
     public:
         virtual string typeName()=0;
+        virtual ReturnType* clone()=0;
         virtual ~ReturnType() {}
 
     };
 
-
-
     class Type : public ReturnType {
     public:
         virtual string typeName(){return "Error<typeName method was called from Type class>";}
+        Type* clone(){
+            return new Type();
+        }
         virtual ~Type() {}
     };
 
     class StringType : public Type{
             public:
             virtual string typeName(){return "STRING";}
+            StringType* clone(){
+                return new StringType();;
+            }
             virtual ~StringType() {}
+    };
+
+
+
+    class Void : public ReturnType {
+    public:
+        virtual string typeName(){return "VOID";}
+        Void* clone(){
+            return new Void();
+        }
+        virtual ~Void() {
+        }
+    };
+
+    class IntType : public Type {
+    public:
+        virtual string typeName(){return "INT";}
+        IntType* clone(){
+            return new IntType();
+        }
+        virtual ~IntType() {}
+    };
+
+    class ByteType : public Type {
+    public:
+        virtual string typeName(){return "BYTE";}
+        ByteType* clone(){
+            return new ByteType();
+        }
+        virtual ~ByteType() {}
+    };
+
+    class BooleanType : public Type {
+    public:
+        virtual string typeName(){return "BOOL";}
+        BooleanType* clone(){
+            return new BooleanType();
+        }
+        virtual ~BooleanType() {}
     };
 
     class Expression : public Node {
@@ -81,31 +125,6 @@ namespace FanC{
         virtual ~Expression() {
             delete type;
         }
-    };
-
-    class Void : public ReturnType {
-    public:
-        virtual string typeName(){return "VOID";}
-        virtual ~Void() {
-        }
-    };
-
-    class IntType : public Type {
-    public:
-        virtual string typeName(){return "INT";}
-        virtual ~IntType() {}
-    };
-
-    class ByteType : public Type {
-    public:
-        virtual string typeName(){return "BYTE";}
-        virtual ~ByteType() {}
-    };
-
-    class BooleanType : public Type {
-    public:
-        virtual string typeName(){return "BOOL";}
-        virtual ~BooleanType() {}
     };
 
     class Operation : public Node {
