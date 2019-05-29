@@ -1,8 +1,6 @@
 //test
 void printOk(bool isOk) {
-    if (isOk) return;
-
-    isOk=false;
+    if (isOk) print("ok");
 }
 
 void main()
