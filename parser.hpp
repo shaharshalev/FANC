@@ -580,7 +580,7 @@ namespace FanC{
         ExpressionList *expressions;
 
         Call(ReturnType *_returnType, Id *_id, ExpressionList *_expressions)
-                : UnaryExpression(_returnType),id(_id), expressions(_expressions) {}
+                : UnaryExpression(_returnType->clone()),id(_id), expressions(_expressions) {}
 
         Id* isPreconditionable(){
 
