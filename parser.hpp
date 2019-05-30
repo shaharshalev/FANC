@@ -188,16 +188,8 @@ namespace FanC{
         BinaryExpression(Expression *_leftExp, Expression *_rightExp, Operation *_op)
                 : Expression(NULL), leftExp(_leftExp), rightExp(_rightExp), op(_op) {
 
-            if(isInstanceOf<RelationalOperation>(_op)){
+            if(isInstanceOf<Relop>(_op)){
                 if(leftExp->isNumric() && rightExp->isNumric()){
-                    this->type=new BooleanType();
-                }else{
-                    errorMismatch(yylineno);
-                    exit(1);
-                }
-            }else if(isInstanceOf<EqualityOperation>(_op)){
-                if(leftExp->isNumric() && rightExp->isNumric()
-                || leftExp->type->typeName()==rightExp->type->typeName()){
                     this->type=new BooleanType();
                 }else{
                     errorMismatch(yylineno);
