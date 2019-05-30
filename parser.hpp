@@ -21,6 +21,12 @@ namespace FanC{
     class Relop;
     class Id;
     class BooleanOperation;
+    class RelationalOperation;
+    class EqualityOperation;
+    class Multiplicative;
+    class Additive;
+    class Number;
+
     template<typename CheckType, typename InstanceType>
     bool isInstanceOf(InstanceType *instance) {
         return (dynamic_cast<CheckType *>(instance) != NULL);
@@ -145,6 +151,10 @@ namespace FanC{
         bool isBoolean(){
             return this->type->typeName()==BooleanType().typeName();
         }
+        bool isNumric(){
+            bool value=isInstanceOf<ByteType>(type) || isInstanceOf<IntType>(type);
+            return value;
+        }
 
         virtual ~Expression() {
 
@@ -177,30 +187,46 @@ namespace FanC{
 
         BinaryExpression(Expression *_leftExp, Expression *_rightExp, Operation *_op)
                 : Expression(NULL), leftExp(_leftExp), rightExp(_rightExp), op(_op) {
-            if (isBoolOperation(_op)) {
-                if(!leftExp->isBoolean() || !rightExp->isBoolean()){
+
+            if(isInstanceOf<RelationalOperation>(_op)){
+                if(leftExp->isNumric() && rightExp->isNumric()){
+                    this->type=new BooleanType();
+                }else{
                     errorMismatch(yylineno);
                     exit(1);
                 }
-                this->type = new BooleanType();
-            } else { //any other operation (not relop or booleanop)
-                if(leftExp->isBoolean() || rightExp->isBoolean()){
+            }else if(isInstanceOf<EqualityOperation>(_op)){
+                if(leftExp->isNumric() && rightExp->isNumric()
+                || leftExp->type->typeName()==rightExp->type->typeName()){
+                    this->type=new BooleanType();
+                }else{
                     errorMismatch(yylineno);
                     exit(1);
                 }
-                //if they are not of the same type we should take the larger one
-                //(will always be int in our case)
-                if (isSameType<ByteType>(leftExp->type, rightExp->type)
-                    || isSameType<IntType>(leftExp->type, rightExp->type)) {
-                    this->type = leftExp->type->clone();
-                } else {
-                    this->type = new IntType();
+            }else if(isInstanceOf<BooleanOperation>(_op)){
+                if(leftExp->isBoolean() && rightExp->isBoolean()){
+                    this->type=new BooleanType();
+                }else{
+                    errorMismatch(yylineno);
+                    exit(1);
+                }
+            }else if(isInstanceOf<Multiplicative>(_op) || isInstanceOf<Additive>(_op)){
+                if(leftExp->isNumric() && leftExp->isNumric()){
+                    this->type=getLargerType();
+                }else{
+                    errorMismatch(yylineno);
+                    exit(1);
                 }
             }
         }
     private:
-        bool isBoolOperation(Operation* _op){
-            return isInstanceOf<Relop>(_op) || isInstanceOf<BooleanOperation>(_op);
+        ReturnType* getLargerType(){
+            if (isSameType<ByteType>(leftExp->type, rightExp->type)
+                || isSameType<IntType>(leftExp->type, rightExp->type)) {
+                return leftExp->type->clone();
+            } else {
+                return  new IntType();
+            }
         }
     public:
 
@@ -226,7 +252,12 @@ namespace FanC{
     public:
         Expression *exp;
 
-        Not(Expression *_exp) : UnaryExpression(new BooleanType()), exp(_exp) {}
+        Not(Expression *_exp) : UnaryExpression(new BooleanType()), exp(_exp) {
+            if(!exp->isBoolean()){
+                errorMismatch(yylineno);
+                exit(1);
+            }
+        }
 
         Id* isPreconditionable(){
             return NULL;
@@ -276,6 +307,26 @@ namespace FanC{
         Relop(string text) : op(text) {}
 
         virtual ~Relop() {
+
+        }
+    };
+
+    class RelationalOperation : public Relop {
+    public:
+
+        RelationalOperation(string text) : Relop(text) {}
+
+        virtual ~RelationalOperation() {
+
+        }
+    };
+
+    class EqualityOperation : public Relop {
+    public:
+
+        EqualityOperation(string text) : Relop(text) {}
+
+        virtual ~EqualityOperation() {
 
         }
     };

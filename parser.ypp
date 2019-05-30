@@ -169,7 +169,7 @@ EndScope: /*epsilon*/ {reduceEndScope();}
 
 int main(){
     //yydebug=1 // uncomment this inorder to debug
-    //freopen ("tests/tests/t0.in","r",stdin);
+    freopen ("tests/tests/t11.in","r",stdin);
     return yyparse();
 }
 

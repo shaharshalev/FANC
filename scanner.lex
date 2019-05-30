@@ -44,8 +44,8 @@ comment             (\/\/.*)
 "{"									{return LBRACE;}
 "}"									{return RBRACE;}
 "="									{return ASSIGN;}
-(<|>|<=|>=)                         {yylval = new Relop(yytext); return RELATIONAL;}
-(==|!=)              				{yylval = new Relop(yytext); return EQUALITY;}
+(<|>|<=|>=)                         {yylval = new RelationalOperation(yytext); return RELATIONAL;}
+(==|!=)              				{yylval = new EqualityOperation(yytext); return EQUALITY;}
 (\*|\/)                             {yylval = new Multiplicative(yytext); return MULTIPLICATIVE;}
 (\+|-)					        	{yylval = new Additive(yytext);return ADDITIVE;}
 [a-zA-Z][a-zA-Z0-9]*				{yylval = new Id(yytext); return ID;}
