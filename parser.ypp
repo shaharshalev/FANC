@@ -49,10 +49,7 @@
 
 %%
 
-Program:	OpenScope Funcs	{
-    reduceProgram();
-
-}
+Program:	OpenScope Funcs	{reduceProgram();}
 ;
 
 Funcs: /*epsilon*/ {}
@@ -113,8 +110,8 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();}
 	|	Call SC	{delete $1; }
 	|	RETURN SC	{validateFunctionReturnType(NULL);}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);}
-	|	IF  IfOpenScope Statement ELSE EndScope OpenScope Statement 	{reduceIf((Expression*)$3);}
-	|	IF  IfOpenScope Statement %prec IFPREC {reduceIf((Expression*)$3);}
+	|	IF  OpenIfScope Statement ELSE EndScope OpenScope Statement 	{reduceEndScope();}
+	|	IF  OpenIfScope Statement %prec IFPREC {reduceEndScope();}
 	|	WHILE LPAREN Exp RPAREN OpenWhileScope Statement	{handleWhile((Expression*)$3);}
 	|	BREAK SC	{validateWhile(Break);}
 	|	CONTINUE SC	{validateWhile(Continue);}
@@ -156,7 +153,7 @@ OpenWhileScope: /*epsilon*/ {reduceOpenWhileScope();}
 OpenScope: /*epsilon*/ {reduceOpenScope();}
 ;
 
-IfOpenScope: LPAREN Exp RPAREN  {reduceIfOpenScope((Expression*)$2);}
+OpenIfScope: LPAREN Exp RPAREN  {reduceOpenIfScope((Expression*)$2);}
 ;
 
 OpenFunctionScope: /*epsilon*/ {reduceOpenFunctionScope();}

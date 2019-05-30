@@ -187,7 +187,7 @@ namespace FanC {
         delete exp;
     }
 
-    void reduceIfOpenScope(Expression *exp) {
+    void reduceOpenIfScope(Expression *exp) {
         symbolTable.push_back(new Scope(symbolTable.back()));
         offsets.push_back(offsets.back());
         validateExpIsBool(exp);
@@ -285,10 +285,6 @@ namespace FanC {
 
     FormalList *reduceFormalsList(FormalList *formalList, FormalDec *formalDec) {
         return formalList->add(formalDec);
-    }
-
-    void reduceIf(Expression* exp) {
-        reduceEndScope();
     }
 
     void reduceProgram() {
