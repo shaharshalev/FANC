@@ -121,7 +121,8 @@ namespace FanC {
     */
     void validateAssignment(Id *id, Expression *exp) {
 
-        if (id->type->typeName() != exp->type->typeName()) {
+        if (id->type->typeName() != exp->type->typeName() &&
+                (exp->type->typeName() != "BYTE" || id->type->typeName()!= "INT") ) {
             errorMismatch(yylineno);
             exit(1);
         }
