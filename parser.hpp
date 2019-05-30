@@ -363,14 +363,14 @@ namespace FanC{
         }
 
         virtual  ~Integer() {
-            cout<<"@~Integer()"<<endl;
+
         }
     };
 
     class Byte : public Number {
     public:
         Byte(Number *num) : Number(num->value, new ByteType()) {
-            cout<<"@Byte ctor start()"<<endl;
+
 
             delete num; //check
             if (value > 255) {
@@ -379,7 +379,7 @@ namespace FanC{
                 errorByteTooLarge(yylineno, stream.str());
                 exit(1);
             }
-            cout<<"@Byte ctor end()"<<endl;
+
         }
 
         virtual  ~Byte() {}
@@ -391,13 +391,13 @@ namespace FanC{
         Id* id;
 
         FormalDec(Type *_type, Id *_id) : type(_type), id(_id) {
-            cout<<"@FormalDec ctor()"<<endl;
+
         }
 
         virtual ~FormalDec() {
-            cout<<"@~FormalDec() start"<<endl;
+
             delete type;
-            cout<<"@~FormalDec() end"<<endl;
+
         }
 
 
@@ -410,9 +410,9 @@ namespace FanC{
         FormalList() {}
 
         FormalList(FormalDec *formalDec) {
-            cout<<"@FormalList() ctor start"<<endl;
+
             add(formalDec);
-            cout<<"@FormalList() ctor end"<<endl;
+
         }
 
         FormalList* add(FormalDec *formalDec) {
@@ -423,7 +423,7 @@ namespace FanC{
         int size(){return decelerations.size(); }
 
         virtual ~FormalList() {
-            cout<<"@~FormalList()"<<endl;
+
         }
     };
 
@@ -432,18 +432,18 @@ namespace FanC{
         Expression *exp;
 
         PreCondition(Expression *_exp) : exp(_exp) {
-            cout<<"@PreCondition ctor"<<endl;
+
         }
 
         Id* isExpressionValid(){
-            cout<<"@PreCondition isExpressionValid(exp)"<<endl;
+
             return exp->isPreconditionable();
         }
 
         virtual ~PreCondition() {
-            cout<<"@ ~PreCondition start"<<endl;
+
             delete exp;
-            cout<<"@ ~PreCondition end"<<endl;
+
         }
     };
 
@@ -456,9 +456,9 @@ namespace FanC{
         }
 
         PreConditions *add(PreCondition *precond) {
-            cout<<"@PreConditions add(precond) start"<<endl;
+
             preconditions.insert(preconditions.begin(), precond);
-            cout<<"@PreConditions add(precond) end"<<endl;
+
             return this;
         }
 
@@ -467,7 +467,7 @@ namespace FanC{
         }
 
         Id* isValid(){
-            cout<<"@PreConditions isValid()"<<endl;
+
             vector<PreCondition *>::iterator it=preconditions.begin();
             while(it!=preconditions.end()){
                 Id *i = (*it)->isExpressionValid();
@@ -479,11 +479,11 @@ namespace FanC{
         }
 
         virtual ~PreConditions() {
-            cout<<"@~PreConditions start"<<endl;
+
             for (vector<PreCondition *>::iterator it = preconditions.begin(); it != preconditions.end(); ++it) {
                 delete *it;
             }
-            cout<<"@~PreConditions end"<<endl;
+
         }
     };
 
@@ -546,7 +546,7 @@ namespace FanC{
 
 
         bool isArgumentListMatch(ExpressionList* expList){
-            cout<<"@isArgumentListMatch "<<endl;
+
             vector<Expression *>::iterator expIt = expList->expressions.begin();
             vector<FormalDec *>::iterator formalIt = this->arguments->decelerations.begin();
             while( (expIt != expList->expressions.end()) && (formalIt != arguments->decelerations.end())){
@@ -564,12 +564,12 @@ namespace FanC{
 
 
         virtual ~FuncDec() {
-            cout<<"@~FuncDec start"<<endl;
+
             delete returnType;
             delete id;
             delete arguments;
             delete conditions;
-            cout<<"@~FuncDec end"<<endl;
+
         }
     };
 
@@ -584,7 +584,7 @@ namespace FanC{
                 : UnaryExpression(_returnType),id(_id), expressions(_expressions) {}
 
         Id* isPreconditionable(){
-            cout<<"@isPreconditionable"<<endl;
+
             vector<Expression*>::iterator it=expressions->expressions.begin();
             while(it!=expressions->expressions.end()){
                 Id* i=(*it)->isPreconditionable();
@@ -596,10 +596,10 @@ namespace FanC{
         }
 
         virtual ~Call() {
-            cout<<"@~Call start"<<endl;
+
             delete expressions;
             delete id;
-            cout<<"@~Call end"<<endl;
+
         }
     };
 
@@ -609,18 +609,18 @@ namespace FanC{
         vector<FuncDec*> functions;
         Scope* parent;
         Scope(){
-            cout<<"@Scope Ctor"<<endl;
+
             parent=NULL;
         }
         Scope(Scope* _parent):parent(_parent){}
 
 
         void addVariable(Id* id){
-            cout<<"@Scope addVariable"<<endl;
+
             variables.push_back(id);
         }
         void addFunction(FuncDec* func){
-            cout<<"@Scope addFunction"<<endl;
+
             func->id->changeIdTypeToFunction();
             functions.push_back(func);
             Id * i = new Id(func->id);
@@ -630,7 +630,7 @@ namespace FanC{
 
     private:
         bool isFunctionExistInScope(FuncDec* func){
-            cout<<"@Scope isFunctionExistInScope"<<endl;
+
             vector<FuncDec*>::iterator it=functions.begin();
             while(it!=functions.end()){
                 FuncDec* currentFunc=*it;
@@ -643,7 +643,7 @@ namespace FanC{
 
 
         FuncDec* getFunctionInScope(Id* id){
-            cout<<"@Scope getFunctionInScope"<<endl;
+
             for (vector<FuncDec *>::iterator it = functions.begin(); it != functions.end(); ++it) {
                 FuncDec* currentFunc=*it;
                 if( *currentFunc->id == *id){
@@ -670,7 +670,7 @@ namespace FanC{
             }
         }
         virtual FuncDec* getFunction(Id* id){
-            cout<<"@Scope getFunction"<<endl;
+
             FuncDec* found=getFunctionInScope(id);
             if(NULL != found){
                 return found;
@@ -682,7 +682,7 @@ namespace FanC{
         }
     private:
         Id* getVariableInScope(Id* id){
-            cout<<"@Scope getVariableInScope"<<endl;
+
             vector<Id *>::iterator it=variables.begin();
             while( it!= variables.end()){
                 Id* currentId= *it;
@@ -700,7 +700,7 @@ namespace FanC{
          * @return the id from the symbolTable, NULL if no such id exist
          */
         Id* getVariable(Id* id){
-            cout<<"@Scope getVariable"<<endl;
+
             Id* found=getVariableInScope(id);
             if(NULL != found){
                 return found;
@@ -712,7 +712,7 @@ namespace FanC{
         }
 
         void printIds(){
-            cout<<"@Scope printIds"<<endl;
+
             for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
                 if((*it)->isFunction()){
                     FuncDec* fun = getFunction(*it);
@@ -728,15 +728,15 @@ namespace FanC{
 
 
         virtual void endScope() {
-            cout<<"@Scope endScope start"<<endl;
+
             output::endScope();
             printIds();
-            cout<<"@Scope endScope end"<<endl;
+
 
         }
 
         virtual ~Scope(){
-            cout<<"@~Scope start"<<endl;
+
             for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
                 cout<<"removing var:"<<(*it)->name<<endl;
                 delete *it;
@@ -745,7 +745,7 @@ namespace FanC{
                 cout<<"removing function:"<<(*it)->id->name<<endl;
                 delete *it;
             }
-            cout<<"@~Scope end"<<endl;
+
 
         }
 
@@ -756,7 +756,7 @@ namespace FanC{
     public:
         WhileScope(Scope* _parent):Scope(_parent){}
         virtual ~WhileScope(){
-            cout<<"@~WhileScope"<<endl;
+
         }
     };
 
@@ -780,14 +780,14 @@ namespace FanC{
         }
 
         void endScope()  {
-            cout<<"@FunctionScope endScope start"<<endl;
+
             output::endScope();
             output::printPreconditions(func->id->name,func->conditions->size());
             printIds();
-            cout<<"@FunctionScope endScope end"<<endl;
+
         }
         virtual ~FunctionScope(){
-            cout<<"@~FunctionScope"<<endl;
+            
         }
     };
     
