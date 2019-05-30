@@ -62,7 +62,9 @@ namespace FanC{
         Type* clone(){
             return new Type();
         }
-        virtual ~Type() {}
+        virtual ~Type() {
+            cout<<"@~Type()"<<endl;
+        }
     };
 
     class StringType : public Type{
@@ -71,7 +73,9 @@ namespace FanC{
             StringType* clone(){
                 return new StringType();;
             }
-            virtual ~StringType() {}
+            virtual ~StringType() {
+                cout<<"@~StringType()"<<endl;
+            }
     };
 
 
@@ -83,6 +87,7 @@ namespace FanC{
             return new Void();
         }
         virtual ~Void() {
+            cout<<"@~Void()"<<endl;
         }
     };
 
@@ -92,7 +97,9 @@ namespace FanC{
         IntType* clone(){
             return new IntType();
         }
-        virtual ~IntType() {}
+        virtual ~IntType() {
+            cout<<"@~IntType()"<<endl;
+        }
     };
 
     class ByteType : public Type {
@@ -101,7 +108,9 @@ namespace FanC{
         ByteType* clone(){
             return new ByteType();
         }
-        virtual ~ByteType() {}
+        virtual ~ByteType() {
+            cout<<"@~ByteType()"<<endl;
+        }
     };
 
     class BooleanType : public Type {
@@ -110,7 +119,9 @@ namespace FanC{
         BooleanType* clone(){
             return new BooleanType();
         }
-        virtual ~BooleanType() {}
+        virtual ~BooleanType() {
+            cout<<"@~BooleanType()"<<endl;
+        }
     };
 
     class Expression : public Node {
@@ -123,13 +134,17 @@ namespace FanC{
         virtual Id* isPreconditionable()=0;
 
         virtual ~Expression() {
+            cout<<"@~Expression() start"<<endl;
             delete type;
+            cout<<"@~Expression() end"<<endl;
         }
     };
 
     class Operation : public Node {
     public:
-        virtual ~Operation() {}
+        virtual ~Operation() {
+            cout<<"@~Operation()"<<endl;
+        }
     };
 
 
@@ -164,9 +179,11 @@ namespace FanC{
         }
 
         virtual ~BinaryExpression() {
+            cout<<"@~BinaryExpression() start"<<endl;
             delete leftExp;
             delete rightExp;
             delete op;
+            cout<<"@~BinaryExpression() end"<<endl;
         }
     };
 
@@ -175,6 +192,7 @@ namespace FanC{
         UnaryExpression(ReturnType *_type) : Expression(_type) {}
 
         virtual ~UnaryExpression() {
+            cout<<"@~UnaryExpression()"<<endl;
         };
     };
 
@@ -189,7 +207,9 @@ namespace FanC{
         }
 
         virtual ~Not() {
+            cout<<"@~Not() start"<<endl;
             delete (exp);
+            cout<<"@~Not() end"<<endl;
         };
     };
 
@@ -200,21 +220,27 @@ namespace FanC{
 
         BinaryOperation(string text) : op(text) {}
 
-        virtual ~BinaryOperation() {}
+        virtual ~BinaryOperation() {
+            cout<<"@~BinaryOperation()"<<endl;
+        }
     };
 
     class Multiplicative : public BinaryOperation {
     public:
         Multiplicative(string text) : BinaryOperation(text) {}
 
-        virtual ~Multiplicative() {}
+        virtual ~Multiplicative() {
+            cout<<"@~Multiplicative()"<<endl;
+        }
     };
 
     class Additive : public BinaryOperation {
     public:
         Additive(string text) : BinaryOperation(text) {}
 
-        virtual ~Additive() {}
+        virtual ~Additive() {
+            cout<<"@~Additive()"<<endl;
+        }
     };
 
     class Relop : public Operation {
@@ -223,7 +249,9 @@ namespace FanC{
 
         Relop(string text) : op(text) {}
 
-        virtual ~Relop() {}
+        virtual ~Relop() {
+            cout<<"@~Relop()"<<endl;
+        }
     };
 
     class BooleanOperation : public Operation {
@@ -232,7 +260,9 @@ namespace FanC{
 
         BooleanOperation(BoolOp o) : op(o) {}
 
-        virtual ~BooleanOperation() {}
+        virtual ~BooleanOperation() {
+            cout<<"@~BooleanOperation()"<<endl;
+        }
     };
 
     class Boolean : public UnaryExpression {
@@ -245,7 +275,9 @@ namespace FanC{
             return NULL;
         }
 
-        virtual ~Boolean() {}
+        virtual ~Boolean() {
+            cout<<"@~Boolean()"<<endl;
+        }
     };
 
     class Id : public UnaryExpression {
@@ -285,7 +317,9 @@ namespace FanC{
             return idType==FunctionType;
         }
 
-        virtual ~Id() {}
+        virtual ~Id() {
+            cout<<"@~Id()"<<endl;
+        }
     };
 
 
@@ -299,7 +333,9 @@ namespace FanC{
             return NULL;
         }
 
-        virtual ~String() {}
+        virtual ~String() {
+            cout<<"@~String()"<<endl;
+        }
     };
 
     class Number : public UnaryExpression {
@@ -314,7 +350,9 @@ namespace FanC{
             return NULL;
         }
 
-        virtual ~Number() {}
+        virtual ~Number() {
+            cout<<"@~Number()"<<endl;
+        }
 
     };
 
@@ -324,12 +362,16 @@ namespace FanC{
             delete n;
         }
 
-        virtual  ~Integer() {}
+        virtual  ~Integer() {
+            cout<<"@~Integer()"<<endl;
+        }
     };
 
     class Byte : public Number {
     public:
         Byte(Number *num) : Number(num->value, new ByteType()) {
+            cout<<"@Byte ctor start()"<<endl;
+
             delete num; //check
             if (value > 255) {
                 stringstream stream;
@@ -337,6 +379,7 @@ namespace FanC{
                 errorByteTooLarge(yylineno, stream.str());
                 exit(1);
             }
+            cout<<"@Byte ctor end()"<<endl;
         }
 
         virtual  ~Byte() {}
@@ -348,10 +391,13 @@ namespace FanC{
         Id* id;
 
         FormalDec(Type *_type, Id *_id) : type(_type), id(_id) {
+            cout<<"@FormalDec ctor()"<<endl;
         }
 
         virtual ~FormalDec() {
+            cout<<"@~FormalDec() start"<<endl;
             delete type;
+            cout<<"@~FormalDec() end"<<endl;
         }
 
 
@@ -364,7 +410,9 @@ namespace FanC{
         FormalList() {}
 
         FormalList(FormalDec *formalDec) {
+            cout<<"@FormalList() ctor start"<<endl;
             add(formalDec);
+            cout<<"@FormalList() ctor end"<<endl;
         }
 
         FormalList* add(FormalDec *formalDec) {
@@ -374,21 +422,28 @@ namespace FanC{
 
         int size(){return decelerations.size(); }
 
-        virtual ~FormalList() {}
+        virtual ~FormalList() {
+            cout<<"@~FormalList()"<<endl;
+        }
     };
 
     class PreCondition : public Node {
     public:
         Expression *exp;
 
-        PreCondition(Expression *_exp) : exp(_exp) {}
+        PreCondition(Expression *_exp) : exp(_exp) {
+            cout<<"@PreCondition ctor"<<endl;
+        }
 
         Id* isExpressionValid(){
+            cout<<"@PreCondition isExpressionValid(exp)"<<endl;
             return exp->isPreconditionable();
         }
 
         virtual ~PreCondition() {
+            cout<<"@ ~PreCondition start"<<endl;
             delete exp;
+            cout<<"@ ~PreCondition end"<<endl;
         }
     };
 
@@ -396,10 +451,14 @@ namespace FanC{
     public:
         vector<PreCondition *> preconditions;
 
-        PreConditions() {}
+        PreConditions() {
+
+        }
 
         PreConditions *add(PreCondition *precond) {
+            cout<<"@PreConditions add(precond) start"<<endl;
             preconditions.insert(preconditions.begin(), precond);
+            cout<<"@PreConditions add(precond) end"<<endl;
             return this;
         }
 
@@ -408,6 +467,7 @@ namespace FanC{
         }
 
         Id* isValid(){
+            cout<<"@PreConditions isValid()"<<endl;
             vector<PreCondition *>::iterator it=preconditions.begin();
             while(it!=preconditions.end()){
                 Id *i = (*it)->isExpressionValid();
@@ -419,9 +479,11 @@ namespace FanC{
         }
 
         virtual ~PreConditions() {
+            cout<<"@~PreConditions start"<<endl;
             for (vector<PreCondition *>::iterator it = preconditions.begin(); it != preconditions.end(); ++it) {
                 delete *it;
             }
+            cout<<"@~PreConditions end"<<endl;
         }
     };
 
@@ -444,6 +506,7 @@ namespace FanC{
 
             virtual ~ExpressionList() {
                 for (vector<Expression *>::iterator it = expressions.begin(); it != expressions.end(); ++it) {
+                    cout<<"removing exp:"<<(*it)->type<<":"<<(*it)->type->typeName()<<endl;
                     delete *it;
                 }
             }
@@ -483,6 +546,7 @@ namespace FanC{
 
 
         bool isArgumentListMatch(ExpressionList* expList){
+            cout<<"@isArgumentListMatch "<<endl;
             vector<Expression *>::iterator expIt = expList->expressions.begin();
             vector<FormalDec *>::iterator formalIt = this->arguments->decelerations.begin();
             while( (expIt != expList->expressions.end()) && (formalIt != arguments->decelerations.end())){
@@ -500,10 +564,12 @@ namespace FanC{
 
 
         virtual ~FuncDec() {
+            cout<<"@~FuncDec start"<<endl;
             delete returnType;
             delete id;
             delete arguments;
             delete conditions;
+            cout<<"@~FuncDec end"<<endl;
         }
     };
 
@@ -518,6 +584,7 @@ namespace FanC{
                 : UnaryExpression(_returnType),id(_id), expressions(_expressions) {}
 
         Id* isPreconditionable(){
+            cout<<"@isPreconditionable"<<endl;
             vector<Expression*>::iterator it=expressions->expressions.begin();
             while(it!=expressions->expressions.end()){
                 Id* i=(*it)->isPreconditionable();
@@ -529,8 +596,10 @@ namespace FanC{
         }
 
         virtual ~Call() {
+            cout<<"@~Call start"<<endl;
             delete expressions;
             delete id;
+            cout<<"@~Call end"<<endl;
         }
     };
 
@@ -540,15 +609,18 @@ namespace FanC{
         vector<FuncDec*> functions;
         Scope* parent;
         Scope(){
+            cout<<"@Scope Ctor"<<endl;
             parent=NULL;
         }
         Scope(Scope* _parent):parent(_parent){}
 
 
         void addVariable(Id* id){
+            cout<<"@Scope addVariable"<<endl;
             variables.push_back(id);
         }
         void addFunction(FuncDec* func){
+            cout<<"@Scope addFunction"<<endl;
             func->id->changeIdTypeToFunction();
             functions.push_back(func);
             Id * i = new Id(func->id);
@@ -558,6 +630,7 @@ namespace FanC{
 
     private:
         bool isFunctionExistInScope(FuncDec* func){
+            cout<<"@Scope isFunctionExistInScope"<<endl;
             vector<FuncDec*>::iterator it=functions.begin();
             while(it!=functions.end()){
                 FuncDec* currentFunc=*it;
@@ -570,7 +643,7 @@ namespace FanC{
 
 
         FuncDec* getFunctionInScope(Id* id){
-
+            cout<<"@Scope getFunctionInScope"<<endl;
             for (vector<FuncDec *>::iterator it = functions.begin(); it != functions.end(); ++it) {
                 FuncDec* currentFunc=*it;
                 if( *currentFunc->id == *id){
@@ -597,6 +670,7 @@ namespace FanC{
             }
         }
         virtual FuncDec* getFunction(Id* id){
+            cout<<"@Scope getFunction"<<endl;
             FuncDec* found=getFunctionInScope(id);
             if(NULL != found){
                 return found;
@@ -608,7 +682,7 @@ namespace FanC{
         }
     private:
         Id* getVariableInScope(Id* id){
-
+            cout<<"@Scope getVariableInScope"<<endl;
             vector<Id *>::iterator it=variables.begin();
             while( it!= variables.end()){
                 Id* currentId= *it;
@@ -626,6 +700,7 @@ namespace FanC{
          * @return the id from the symbolTable, NULL if no such id exist
          */
         Id* getVariable(Id* id){
+            cout<<"@Scope getVariable"<<endl;
             Id* found=getVariableInScope(id);
             if(NULL != found){
                 return found;
@@ -637,6 +712,7 @@ namespace FanC{
         }
 
         void printIds(){
+            cout<<"@Scope printIds"<<endl;
             for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
                 if((*it)->isFunction()){
                     FuncDec* fun = getFunction(*it);
@@ -652,18 +728,24 @@ namespace FanC{
 
 
         virtual void endScope() {
+            cout<<"@Scope endScope start"<<endl;
             output::endScope();
             printIds();
+            cout<<"@Scope endScope end"<<endl;
 
         }
 
         virtual ~Scope(){
+            cout<<"@~Scope start"<<endl;
             for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
+                cout<<"removing var:"<<(*it)->name<<endl;
                 delete *it;
             }
             for (vector<FuncDec *>::iterator it = functions.begin(); it != functions.end(); ++it) {
+                cout<<"removing function:"<<(*it)->id->name<<endl;
                 delete *it;
             }
+            cout<<"@~Scope end"<<endl;
 
         }
 
@@ -674,7 +756,7 @@ namespace FanC{
     public:
         WhileScope(Scope* _parent):Scope(_parent){}
         virtual ~WhileScope(){
-
+            cout<<"@~WhileScope"<<endl;
         }
     };
 
@@ -698,12 +780,14 @@ namespace FanC{
         }
 
         void endScope()  {
+            cout<<"@FunctionScope endScope start"<<endl;
             output::endScope();
             output::printPreconditions(func->id->name,func->conditions->size());
             printIds();
+            cout<<"@FunctionScope endScope end"<<endl;
         }
         virtual ~FunctionScope(){
-
+            cout<<"@~FunctionScope"<<endl;
         }
     };
     
