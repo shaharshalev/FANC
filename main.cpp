@@ -88,7 +88,7 @@ namespace FanC {
         FuncDec *func = getFunction();
         if ((NULL == func)
             || (exp == NULL && !isInstanceOf<Void>(func->returnType))
-            || (exp != NULL && !func->returnType->canBeAssigned(exp->type))) {
+            || (exp != NULL && (!func->returnType->canBeAssigned(exp->type)||isInstanceOf<Void>(func->returnType) ))) {
             errorMismatch(yylineno);
             exit(1);
         }
