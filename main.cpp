@@ -12,18 +12,16 @@ namespace FanC {
 
 
 
-    void validateMain(Id *id, FormalList *formals, ReturnType *returnType) {
+    void checkAndNotifyIfMain(Id *id, FormalList *formals, ReturnType *returnType) {
 
         if (id->name == "main") {
-            if (returnType->typeName() != "VOID" || formals->size() != 0) {
-                errorMismatch(yylineno);
-                exit(1);
-                //todo validate error
+            if (returnType->typeName() != Void().typeName() || formals->size() != 0) {
+                return; //for now we just ignore a function that was not declared, but with the wrong type
+                //errorMismatch(yylineno);
+                //exit(1);
+                //todo validate this with TA, also the error that is returned
             }
-            if (isMainExist) {
-                errorDef(yylineno, "main");
-                exit(1);
-            }
+
             isMainExist = true;
         }
 
@@ -241,7 +239,7 @@ namespace FanC {
     void reduceFuncDeclSignature(ReturnType *returnType, Id *id, FormalList *formals) {
 
         assertIdentifierNotExists(id);
-        validateMain(id, formals, returnType);
+        checkAndNotifyIfMain(id, formals, returnType);
         FunctionScope *functionScope = dynamic_cast<FunctionScope *>(symbolTable.back());
         functionScope->updateFunctionScope(new FuncDec(returnType, id, formals, NULL));
     }
@@ -323,7 +321,6 @@ namespace FanC {
     }
 
     void reduceProgram() {
-
         if (!isMainExist) {
             errorMainMissing();
             exit(1);

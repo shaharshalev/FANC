@@ -48,7 +48,7 @@ namespace FanC {
 
     void handleIDExpression(Id *id);
 
-    void validateMain(Id *id, FormalList *formals, ReturnType *returnType);
+    void checkAndNotifyIfMain(Id *id, FormalList *formals, ReturnType *returnType);
     int yyerror(const char * message);
 }
 #endif //HW3_MAIN_H
