@@ -13,6 +13,7 @@ namespace FanC {
 
 
     void validateMain(Id *id, FormalList *formals, ReturnType *returnType) {
+        cout<< "!!validateMain"<<endl;
         if (id->name == "main") {
             if (returnType->typeName() != "VOID" || formals->size() != 0) {
                 errorMismatch(yylineno);
@@ -29,6 +30,7 @@ namespace FanC {
     }
 
     void validateWhile(WhileOp op) {
+        cout<< "!!validateWhile"<<endl;
         if (inWhile()) {
             switch (op) {
                 case Break:
@@ -42,6 +44,7 @@ namespace FanC {
     }
 
     void validateExpIsBool(Expression *exp) {
+        cout<< "!!validateExpIsBool"<<endl;
         if (!isInstanceOf<BooleanType>(exp->type)) {
             errorMismatch(yylineno);
             exit(1);
@@ -51,6 +54,7 @@ namespace FanC {
 
 
     bool inWhile() {
+        cout<< "!!inWhile"<<endl;
         for (vector<Scope *>::reverse_iterator i = symbolTable.rbegin(); i != symbolTable.rend(); ++i) {
             Scope *scope = *i;
             if (isInstanceOf<WhileScope>(scope)) return true;
@@ -63,6 +67,7 @@ namespace FanC {
 * null is returned if we are not in a function.
 */
     FuncDec *getFunction() {
+        cout<< "!!getFunction"<<endl;
         for (vector<Scope *>::reverse_iterator i = symbolTable.rbegin(); i != symbolTable.rend(); ++i) {
             Scope *scope = *i;
             if (isInstanceOf<FunctionScope>(scope)) {
@@ -79,6 +84,7 @@ namespace FanC {
     * and the expression is of the same type as the function returned type.
     */
     void validateFunctionReturnType(Expression *exp) {
+        cout<< "!!validateFunctionReturnType"<<endl;
         FuncDec *func = getFunction();
         if ((NULL == func)
             || (exp == NULL && !isInstanceOf<Void>(func->returnType))
@@ -91,6 +97,7 @@ namespace FanC {
     }
 
     Call *handleCall(Id *id, ExpressionList *expList) {
+        cout<< "!!handleCall"<<endl;
         FuncDec *func = symbolTable.back()->getFunction(id);
 
         if (NULL == func) {
@@ -113,6 +120,7 @@ namespace FanC {
     ** this function assume that id type is updated.
     */
     void validateAssignment(Id *id, Expression *exp) {
+        cout<< "!!validateAssignment"<<endl;
         if (id->type->typeName() != exp->type->typeName()) {
             errorMismatch(yylineno);
             exit(1);
@@ -121,6 +129,7 @@ namespace FanC {
     }
 
     void assertIdentifierNotExists(Id *id) {
+        cout<< "!!assertIdentifierNotExists"<<endl;
         Scope *scope = symbolTable.back();
         if (scope->getVariable(id) != NULL) {
             errorDef(yylineno, id->name);
@@ -129,6 +138,7 @@ namespace FanC {
     }
 
     void insertVarToTable(Id *id) {
+        cout<< "!!insertVarToTable"<<endl;
         assertIdentifierNotExists(id);
         int newOffset = offsets.back();
         offsets.pop_back();
@@ -138,12 +148,14 @@ namespace FanC {
     }
 
     void handleTypeDecl(Type *type, Id *id) {
+        cout<< "!!handleTypeDecl"<<endl;
         id->updateType(type);
         insertVarToTable(id);
 
     }
 
     void handleArgumentDecl(FormalList *formalList) {
+        cout<< "!!handleArgumentDecl"<<endl;
 
         int offset = -1;
         vector<FormalDec *>::iterator it = formalList->decelerations.begin();
@@ -162,6 +174,7 @@ namespace FanC {
     ** if id does not exist the function will exit with error
     */
     Id *extractIdFromSymbolTable(Id *id) {
+        cout<< "!!extractIdFromSymbolTable"<<endl;
         Id *i = symbolTable.back()->getVariable(id);
         if (NULL == i) {
             errorUndef(yylineno, id->name);
@@ -171,12 +184,14 @@ namespace FanC {
     }
 
     void handleIDExpression(Id *id) {
+        cout<< "!!handleIDExpression"<<endl;
         Id *idFromSymbolTable = extractIdFromSymbolTable(id);
         id->type= idFromSymbolTable->type->clone();
         id->offset = idFromSymbolTable->offset;
     }
 
     void assignToVar(Id *id, Expression *exp) {
+        cout<< "!!assignToVar"<<endl;
         Id *idFromSymbolTable = extractIdFromSymbolTable(id);
         if (idFromSymbolTable->isFunction()) {
             errorUndef(yylineno, id->name);
@@ -188,6 +203,7 @@ namespace FanC {
     }
 
     void reduceOpenIfScope(Expression *exp) {
+        cout<< "!!reduceOpenIfScope"<<endl;
         symbolTable.push_back(new Scope(symbolTable.back()));
         offsets.push_back(offsets.back());
         validateExpIsBool(exp);
@@ -196,26 +212,32 @@ namespace FanC {
 
 
     bool operator==(const Id &a, const Id &b) {
+        cout<< "!!operatorID"<<endl;
         return a.name == b.name;
     }
 
     bool operator!=(const Id &a, const Id &b) {
+        cout<< "!!operatorID"<<endl;
         return a.name != b.name;
     }
 
     bool operator==(const FuncDec &a, const FuncDec &b) {
+        cout<< "!!operatorFuncDec"<<endl;
         return a.id == b.id;
     }
 
     bool operator!=(const FuncDec &a, const FuncDec &b) {
+        cout<< "!!operatorFuncDec"<<endl;
         return a.id != b.id;
     }
 
     void reduceFuncDecl() {
+        cout<< "!!reduceFuncDecl"<<endl;
         reduceEndScope();
     }
 
     void reduceFuncDeclSignature(ReturnType *returnType, Id *id, FormalList *formals) {
+        cout<< "!!reduceFuncDeclSignature"<<endl;
         assertIdentifierNotExists(id);
         validateMain(id, formals, returnType);
         FunctionScope *functionScope = dynamic_cast<FunctionScope *>(symbolTable.back());
@@ -223,6 +245,7 @@ namespace FanC {
     }
 
     void reducePreConditionsDecl(PreConditions *preconditions) {
+        cout<< "!!reducePreConditionsDecl"<<endl;
         Id *i = preconditions->isValid();
         if (i != NULL) {
             errorUndef(yylineno, i->name);
@@ -233,10 +256,12 @@ namespace FanC {
     }
 
     void reduceFormalDecl(Type *type, Id *id) {
+        cout<< "!!reduceFormalDecl"<<endl;
         id->updateType(type);
     }
 
     void reduceOpenWhileScope(Expression* exp) {
+        cout<< "!!reduceOpenWhileScope"<<endl;
         validateExpIsBool(exp);
         symbolTable.push_back(new WhileScope(symbolTable.back()));
         offsets.push_back(offsets.back());
@@ -244,6 +269,7 @@ namespace FanC {
     }
 
     void reduceOpenScope() {
+        cout<< "!!reduceOpenScope"<<endl;
         if (symbolTable.empty()) {
             assert(offsets.empty());
             symbolTable.push_back(new Scope(NULL));
@@ -263,15 +289,18 @@ namespace FanC {
     }
 
     PreConditions *reducePreConditions(PreConditions *preConditions, PreCondition *precondition) {
+        cout<< "!!reducePreConditions"<<endl;
         return preConditions->add(precondition);
     }
 
     void reduceOpenFunctionScope() {
+        cout<< "!!reduceOpenFunctionScope"<<endl;
         symbolTable.push_back(new FunctionScope(symbolTable.back()));
         offsets.push_back(offsets.back());
     }
 
     void reduceEndScope() {
+        cout<< "!!reduceEndScope"<<endl;
         Scope *currentScope = symbolTable.back();
         symbolTable.pop_back();
         offsets.pop_back();
@@ -280,16 +309,19 @@ namespace FanC {
     }
 
     void reduceStatement() {
+        cout<< "!!reduceStatement"<<endl;
         reduceEndScope();
     }
 
 
 
     FormalList *reduceFormalsList(FormalList *formalList, FormalDec *formalDec) {
+        cout<< "!!reduceFormalsList"<<endl;
         return formalList->add(formalDec);
     }
 
     void reduceProgram() {
+    cout<< "!!reduceProgram"<<endl;
         if (!isMainExist) {
             errorMainMissing();
             exit(1);
@@ -298,6 +330,7 @@ namespace FanC {
     }
 
     void handleWhile() {
+        cout<< "!!handleWhile"<<endl;
         reduceEndScope();
     }
 
