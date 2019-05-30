@@ -52,7 +52,7 @@ comment             (\/\/.*)
 (0|[1-9][0-9]*)						{yylval = new Number(yytext,new Type());return NUM;}
 \"([^\n\r\"\\]|\\[rnt"\\])+\"		{yylval = new String(yytext); return STRING;}
 {whitespace}						;
-<<EOF>>								exit(0);
+<<EOF>>								yyterminate();
 {comment}                           ;
 .									{errorLex(yylineno);exit(0);}
 
