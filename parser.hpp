@@ -171,7 +171,7 @@ namespace FanC{
                 //(will always be int in our case)
                 if (isSameType<ByteType>(leftExp->type, rightExp->type)
                     || isSameType<IntType>(leftExp->type, rightExp->type)) {
-                    this->type = leftExp->type;
+                    this->type = leftExp->type->clone();
                 } else {
                     this->type = new IntType();
                 }
