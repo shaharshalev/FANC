@@ -506,7 +506,6 @@ namespace FanC{
 
             virtual ~ExpressionList() {
                 for (vector<Expression *>::iterator it = expressions.begin(); it != expressions.end(); ++it) {
-                    cout<<"removing exp:"<<(*it)->type<<":"<<(*it)->type->typeName()<<endl;
                     delete *it;
                 }
             }
@@ -738,11 +737,9 @@ namespace FanC{
         virtual ~Scope(){
 
             for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
-                cout<<"removing var:"<<(*it)->name<<endl;
                 delete *it;
             }
             for (vector<FuncDec *>::iterator it = functions.begin(); it != functions.end(); ++it) {
-                cout<<"removing function:"<<(*it)->id->name<<endl;
                 delete *it;
             }
 
