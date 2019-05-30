@@ -63,7 +63,7 @@ namespace FanC{
             return new Type();
         }
         virtual ~Type() {
-            cout<<"@~Type()"<<endl;
+
         }
     };
 
@@ -74,7 +74,7 @@ namespace FanC{
                 return new StringType();;
             }
             virtual ~StringType() {
-                cout<<"@~StringType()"<<endl;
+
             }
     };
 
@@ -87,7 +87,7 @@ namespace FanC{
             return new Void();
         }
         virtual ~Void() {
-            cout<<"@~Void()"<<endl;
+
         }
     };
 
@@ -98,7 +98,7 @@ namespace FanC{
             return new IntType();
         }
         virtual ~IntType() {
-            cout<<"@~IntType()"<<endl;
+
         }
     };
 
@@ -109,7 +109,7 @@ namespace FanC{
             return new ByteType();
         }
         virtual ~ByteType() {
-            cout<<"@~ByteType()"<<endl;
+
         }
     };
 
@@ -120,7 +120,7 @@ namespace FanC{
             return new BooleanType();
         }
         virtual ~BooleanType() {
-            cout<<"@~BooleanType()"<<endl;
+
         }
     };
 
@@ -134,16 +134,16 @@ namespace FanC{
         virtual Id* isPreconditionable()=0;
 
         virtual ~Expression() {
-            cout<<"@~Expression() start"<<endl;
+
             delete type;
-            cout<<"@~Expression() end"<<endl;
+
         }
     };
 
     class Operation : public Node {
     public:
         virtual ~Operation() {
-            cout<<"@~Operation()"<<endl;
+
         }
     };
 
@@ -179,11 +179,11 @@ namespace FanC{
         }
 
         virtual ~BinaryExpression() {
-            cout<<"@~BinaryExpression() start"<<endl;
+
             delete leftExp;
             delete rightExp;
             delete op;
-            cout<<"@~BinaryExpression() end"<<endl;
+
         }
     };
 
@@ -192,7 +192,7 @@ namespace FanC{
         UnaryExpression(ReturnType *_type) : Expression(_type) {}
 
         virtual ~UnaryExpression() {
-            cout<<"@~UnaryExpression()"<<endl;
+
         };
     };
 
@@ -207,9 +207,9 @@ namespace FanC{
         }
 
         virtual ~Not() {
-            cout<<"@~Not() start"<<endl;
+
             delete (exp);
-            cout<<"@~Not() end"<<endl;
+
         };
     };
 
@@ -221,7 +221,7 @@ namespace FanC{
         BinaryOperation(string text) : op(text) {}
 
         virtual ~BinaryOperation() {
-            cout<<"@~BinaryOperation()"<<endl;
+
         }
     };
 
@@ -230,7 +230,7 @@ namespace FanC{
         Multiplicative(string text) : BinaryOperation(text) {}
 
         virtual ~Multiplicative() {
-            cout<<"@~Multiplicative()"<<endl;
+
         }
     };
 
@@ -239,7 +239,7 @@ namespace FanC{
         Additive(string text) : BinaryOperation(text) {}
 
         virtual ~Additive() {
-            cout<<"@~Additive()"<<endl;
+
         }
     };
 
@@ -250,7 +250,7 @@ namespace FanC{
         Relop(string text) : op(text) {}
 
         virtual ~Relop() {
-            cout<<"@~Relop()"<<endl;
+
         }
     };
 
@@ -261,7 +261,7 @@ namespace FanC{
         BooleanOperation(BoolOp o) : op(o) {}
 
         virtual ~BooleanOperation() {
-            cout<<"@~BooleanOperation()"<<endl;
+
         }
     };
 
@@ -276,7 +276,7 @@ namespace FanC{
         }
 
         virtual ~Boolean() {
-            cout<<"@~Boolean()"<<endl;
+
         }
     };
 
@@ -318,7 +318,7 @@ namespace FanC{
         }
 
         virtual ~Id() {
-            cout<<"@~Id()"<<endl;
+
         }
     };
 
@@ -334,7 +334,7 @@ namespace FanC{
         }
 
         virtual ~String() {
-            cout<<"@~String()"<<endl;
+
         }
     };
 
@@ -351,7 +351,7 @@ namespace FanC{
         }
 
         virtual ~Number() {
-            cout<<"@~Number()"<<endl;
+
         }
 
     };
@@ -787,7 +787,7 @@ namespace FanC{
 
         }
         virtual ~FunctionScope(){
-            
+
         }
     };
     
