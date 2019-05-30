@@ -211,7 +211,7 @@ namespace FanC{
                     exit(1);
                 }
             }else if(isInstanceOf<Multiplicative>(_op) || isInstanceOf<Additive>(_op)){
-                if(leftExp->isNumric() && leftExp->isNumric()){
+                if(leftExp->isNumric() && rightExp->isNumric()){
                     this->type=getLargerType();
                 }else{
                     errorMismatch(yylineno);
