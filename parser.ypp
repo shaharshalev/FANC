@@ -112,7 +112,7 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);}
 	|	IF  OpenIfScope Statement ELSE EndScope OpenScope Statement 	{reduceEndScope();}
 	|	IF  OpenIfScope Statement %prec IFPREC {reduceEndScope();}
-	|	WHILE LPAREN Exp RPAREN OpenWhileScope Statement	{handleWhile((Expression*)$3);}
+	|	WHILE  OpenWhileScope Statement	{handleWhile();}
 	|	BREAK SC	{validateWhile(Break);}
 	|	CONTINUE SC	{validateWhile(Continue);}
 ;
@@ -147,7 +147,7 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 	|	Exp EQUALITY Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);}
 ;
 
-OpenWhileScope: /*epsilon*/ {reduceOpenWhileScope();}
+OpenWhileScope: LPAREN Exp RPAREN {reduceOpenWhileScope((Expression*)$3);}
 ;
 
 OpenScope: /*epsilon*/ {reduceOpenScope();}

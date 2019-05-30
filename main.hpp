@@ -9,9 +9,9 @@ namespace FanC {
     void reduceFuncDeclSignature(ReturnType* returnType,Id* id,FormalList* formals);
     void reducePreConditionsDecl(PreConditions* preconditions);
     void reduceStatement();
-    void handleWhile(Expression *exp);
+    void handleWhile();
     void reduceFormalDecl(Type* type,Id* id);
-    void reduceOpenWhileScope();
+    void reduceOpenWhileScope(Expression *exp);
     void reduceOpenScope();
     void reduceOpenFunctionScope();
     void reduceEndScope();

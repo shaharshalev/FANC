@@ -236,9 +236,11 @@ namespace FanC {
         id->updateType(type);
     }
 
-    void reduceOpenWhileScope() {
+    void reduceOpenWhileScope(Expression* exp) {
+        validateExpIsBool(exp);
         symbolTable.push_back(new WhileScope(symbolTable.back()));
         offsets.push_back(offsets.back());
+        delete exp;
     }
 
     void reduceOpenScope() {
@@ -295,10 +297,8 @@ namespace FanC {
         reduceEndScope();
     }
 
-    void handleWhile(Expression *exp) {
-        validateExpIsBool(exp);
+    void handleWhile() {
         reduceEndScope();
-        delete exp;
     }
 
     int yyerror(const char * message){
