@@ -31,13 +31,15 @@ namespace FanC {
 
     void validateWhile(WhileOp op) {
 
-        if (inWhile()) {
+        if (!inWhile()) {
             switch (op) {
                 case Break:
                     errorUnexpectedBreak(yylineno);
+                    exit(1);
                     break;
                 case Continue:
                     errorUnexpectedContinue(yylineno);
+                    exit(1);
                     break;
             }
         }
