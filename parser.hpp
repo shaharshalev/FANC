@@ -261,7 +261,7 @@ namespace FanC{
         Id(string text,ReturnType* _type,IdentifierType _idType) : UnaryExpression(_type),
         name(text),idType(_idType) {}
 
-        Id(Id* id):UnaryExpression(id->type) {
+        Id(Id* id):UnaryExpression(id->type->clone()) {
                 name = id->name;
                 offset = id->offset;
                 idType = id->idType;
