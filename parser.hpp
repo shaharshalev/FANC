@@ -52,6 +52,10 @@ namespace FanC{
     public:
         virtual string typeName()=0;
         virtual ReturnType* clone()=0;
+
+        virtual bool canBeAssigned(ReturnType* other){
+            return this->typeName()==other->typeName();
+        }
         virtual ~ReturnType() {}
 
     };
@@ -91,17 +95,6 @@ namespace FanC{
         }
     };
 
-    class IntType : public Type {
-    public:
-        virtual string typeName(){return "INT";}
-        IntType* clone(){
-            return new IntType();
-        }
-        virtual ~IntType() {
-
-        }
-    };
-
     class ByteType : public Type {
     public:
         virtual string typeName(){return "BYTE";}
@@ -112,6 +105,22 @@ namespace FanC{
 
         }
     };
+
+    class IntType : public Type {
+    public:
+        virtual string typeName(){return "INT";}
+        IntType* clone(){
+            return new IntType();
+        }
+        bool canBeAssigned(ReturnType* other){
+            return this->typeName()==other->typeName() || other->typeName()==ByteType().typeName();
+        }
+        virtual ~IntType() {
+
+        }
+    };
+
+
 
     class BooleanType : public Type {
     public:
@@ -551,7 +560,9 @@ namespace FanC{
             while( (expIt != expList->expressions.end()) && (formalIt != arguments->decelerations.end())){
                 Expression* currentExp=*expIt;
                 FormalDec* currentArgument=*formalIt;
-                if(currentExp->type->typeName() != currentArgument->type->typeName()) return false;
+                if(!currentArgument->type->canBeAssigned(currentExp->type))
+                    return false;
+
                 ++expIt;
                 ++formalIt;
             }

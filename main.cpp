@@ -88,7 +88,7 @@ namespace FanC {
         FuncDec *func = getFunction();
         if ((NULL == func)
             || (exp == NULL && !isInstanceOf<Void>(func->returnType))
-            || (exp != NULL && (exp->type->typeName() != func->returnType->typeName()))) {
+            || (exp != NULL && !func->returnType->canBeAssigned(exp->type))) {
             errorMismatch(yylineno);
             exit(1);
         }
@@ -121,8 +121,7 @@ namespace FanC {
     */
     void validateAssignment(Id *id, Expression *exp) {
 
-        if (id->type->typeName() != exp->type->typeName() &&
-                (exp->type->typeName() != "BYTE" || id->type->typeName()!= "INT") ) {
+        if (!id->type->canBeAssigned(exp->type)) {
             errorMismatch(yylineno);
             exit(1);
         }
