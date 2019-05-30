@@ -9,13 +9,7 @@ namespace FanC {
     vector<int> offsets;
     bool isMainExist = false;
 
-    void reduceProgram() {
-        if (!isMainExist) {
-            errorMainMissing();
-            exit(1);
-        }
-        symbolTable.back()->endScope();
-    }
+
 
 
     void validateMain(Id *id, FormalList *formals, ReturnType *returnType) {
@@ -54,11 +48,7 @@ namespace FanC {
         }
     }
 
-    void handleWhile(Expression *exp) {
-        validateExpIsBool(exp);
-        symbolTable.back()->endScope();
-        delete exp;
-    }
+
 
     bool inWhile() {
         for (vector<Scope *>::reverse_iterator i = symbolTable.rbegin(); i != symbolTable.rend(); ++i) {
@@ -197,10 +187,11 @@ namespace FanC {
         delete exp;
     }
 
-    void handleIf(Expression *exp) {
+    void reduceIfOpenScope(Expression *exp) {
+        symbolTable.push_back(new Scope(symbolTable.back()));
+        offsets.push_back(offsets.back());
         validateExpIsBool(exp);
-        symbolTable.back()->endScope();
-        delete exp; //TODO: THE PROBLEM IS HERE
+        delete exp;
     }
 
 
@@ -221,7 +212,7 @@ namespace FanC {
     }
 
     void reduceFuncDecl() {
-        symbolTable.back()->endScope();
+        reduceEndScope();
     }
 
     void reduceFuncDeclSignature(ReturnType *returnType, Id *id, FormalList *formals) {
@@ -287,20 +278,36 @@ namespace FanC {
     }
 
     void reduceStatement() {
-        symbolTable.back()->endScope();
+        reduceEndScope();
     }
 
-    int yyerror(const char * message){
-        errorSyn(yylineno);
-        exit(1);
-    }
+
 
     FormalList *reduceFormalsList(FormalList *formalList, FormalDec *formalDec) {
         return formalList->add(formalDec);
     }
 
     void reduceIf(Expression* exp) {
-        symbolTable.back()->endScope();
+        reduceEndScope();
+    }
+
+    void reduceProgram() {
+        if (!isMainExist) {
+            errorMainMissing();
+            exit(1);
+        }
+        reduceEndScope();
+    }
+
+    void handleWhile(Expression *exp) {
+        validateExpIsBool(exp);
+        reduceEndScope();
+        delete exp;
+    }
+
+    int yyerror(const char * message){
+        errorSyn(yylineno);
+        exit(1);
     }
 
 

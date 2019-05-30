@@ -156,7 +156,7 @@ OpenWhileScope: /*epsilon*/ {reduceOpenWhileScope();}
 OpenScope: /*epsilon*/ {reduceOpenScope();}
 ;
 
-IfOpenScope: LPAREN Exp RPAREN  {handleIf((Expression*)$2);}
+IfOpenScope: LPAREN Exp RPAREN  {reduceIfOpenScope((Expression*)$2);}
 ;
 
 OpenFunctionScope: /*epsilon*/ {reduceOpenFunctionScope();}

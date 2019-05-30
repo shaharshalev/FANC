@@ -37,7 +37,7 @@ namespace FanC {
 
     void assignToVar(Id *id, Expression *exp);
 
-    void handleIf(Expression *exp);
+    void reduceIfOpenScope(Expression *exp);
 
     FuncDec *getFunction();
 
