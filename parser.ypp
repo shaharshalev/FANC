@@ -147,7 +147,7 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 	|	Exp EQUALITY Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);}
 ;
 
-OpenWhileScope: LPAREN Exp RPAREN {reduceOpenWhileScope((Expression*)$3);}
+OpenWhileScope: LPAREN Exp RPAREN {reduceOpenWhileScope((Expression*)$2);}
 ;
 
 OpenScope: /*epsilon*/ {reduceOpenScope();}
@@ -169,7 +169,7 @@ EndScope: /*epsilon*/ {reduceEndScope();}
 
 int main(){
     //yydebug=1 // uncomment this inorder to debug
-    //freopen ("tests/tests/t0.in","r",stdin);
+    freopen ("tests/tests/t0.in","r",stdin);
     return yyparse();
 }
 
