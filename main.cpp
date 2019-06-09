@@ -17,9 +17,6 @@ namespace FanC {
         if (id->name == "main") {
             if (returnType->typeName() != Void().typeName() || formals->size() != 0) {
                 return; //for now we just ignore a function that was not declared, but with the wrong type
-                //errorMismatch(yylineno);
-                //exit(1);
-                //todo validate this with TA, also the error that is returned
             }
 
             isMainExist = true;
@@ -156,11 +153,11 @@ namespace FanC {
 
     void handleArgumentDecl(FormalList *formalList) {
 
-
         int offset = -1;
         vector<FormalDec *>::iterator it = formalList->decelerations.begin();
         while (formalList->decelerations.end() != it) {
             FormalDec *formalDec = *it;
+            assertIdentifierNotExists(formalDec->id);
             Id *id = new Id(formalDec->id);
             id->offset = offset;
             symbolTable.back()->addVariable(id);
