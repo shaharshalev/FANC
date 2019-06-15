@@ -48,6 +48,8 @@ namespace FanC {
 
     void handleIDExpression(Id *id);
 
+    string getRegister(Expression* exp);
+
     void checkAndNotifyIfMain(Id *id, FormalList *formals, ReturnType *returnType);
     int yyerror(const char * message);
 }

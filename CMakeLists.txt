@@ -28,4 +28,4 @@ ADD_EXECUTABLE(hw3 ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
         main.cpp
         parser.ypp
         scanner.lex
-        )
+        registers.hpp)

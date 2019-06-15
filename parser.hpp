@@ -9,6 +9,8 @@
 #include <stdbool.h>
 #include <stdlib.h>     /* atoi */
 #include "output.hpp"
+#include "registers.hpp"
+#include "bp.hpp"
 
 using namespace std;
 using namespace output;
@@ -51,7 +53,18 @@ namespace FanC{
 
     class Node {
     public:
+        vector<int> trueList;
+        vector<int> falseList;
+        string registerName="";
+
         virtual ~Node() {}
+    };
+
+    //Label Marker- a label creator in some place
+    class M:public Node{
+    public:
+        string label; // the "quad" - label or address in our case it is just a label
+
     };
 
     class ReturnType : public Node {
@@ -143,7 +156,6 @@ namespace FanC{
     public:
         ReturnType *type;
 
-
         Expression(ReturnType *_type) : type(_type) {}
 
         virtual Id* isPreconditionable()=0;
@@ -170,6 +182,27 @@ namespace FanC{
         }
     };
 
+    class BinaryOperation : public Operation {
+    public:
+        string op;
+
+        BinaryOperation(string text) : op(text) {}
+
+        virtual ~BinaryOperation() {
+
+        }
+    };
+
+    class Relop : public Operation {
+    public:
+        string op;
+
+        Relop(string text) : op(text) {}
+
+        virtual ~Relop() {
+
+        }
+    };
 
 
     class BinaryExpression : public Expression {
@@ -191,6 +224,27 @@ namespace FanC{
             if(isInstanceOf<Relop>(_op)){
                 if(leftExp->isNumric() && rightExp->isNumric()){
                     this->type=new BooleanType();
+                    //todo emit branch that match relop
+                    string _operation=((Relop*)_op)->op;
+                    string cmd;
+                    if(_operation=="=="){
+                        cmd="beq ";
+                    }else if(_operation=="!="){
+                        cmd="bne ";
+                    }else if(_operation=="<="){
+                        cmd="ble ";
+                    }else if(_operation=="<"){
+                        cmd="blt ";
+                    }else if(_operation==">="){
+                        cmd="bge ";
+                    }else { // _operation is >
+                        cmd="bgt ";
+                    }
+                    cmd+=leftExp->registerName+", " +rightExp->registerName
+                    +", "; //to be patched;
+                    this->trueList=CodeBuffer::instance().makelist(CodeBuffer::instance().emit(cmd));
+                    this->falseList=CodeBuffer::instance().makelist(CodeBuffer::instance().emit("j "));
+                    Registers::getInstance().regFree(leftExp->registerName);
                 }else{
                     errorMismatch(yylineno);
                     exit(1);
@@ -198,6 +252,7 @@ namespace FanC{
             }else if(isInstanceOf<BooleanOperation>(_op)){
                 if(leftExp->isBoolean() && rightExp->isBoolean()){
                     this->type=new BooleanType();
+                    //todo emit branch that match relop
                 }else{
                     errorMismatch(yylineno);
                     exit(1);
@@ -205,11 +260,39 @@ namespace FanC{
             }else if(isInstanceOf<Multiplicative>(_op) || isInstanceOf<Additive>(_op)){
                 if(leftExp->isNumric() && rightExp->isNumric()){
                     this->type=getLargerType();
+                    this->registerName = leftExp->registerName;
+                    string command;
+                    string _operator=((BinaryOperation*)_op)->op;
+                    if(isInstanceOf<Multiplicative>(_op)){
+                        if(_operator=="*")
+                            command= "mul "+this->registerName+", "+leftExp->registerName+
+                                ", "+rightExp->registerName;
+                        else if(_operator=="/"){
+                            command= "div "+this->registerName+", "+leftExp->registerName+
+                                     ", "+rightExp->registerName;
+                            //TODO: add code for division by zero
+                        }
+
+                    }else{ //Additive
+                        string op_suffix="";
+                        if(this->type->typeName()==ByteType().typeName()){
+                            op_suffix="u";
+                        }
+                        if(_operator=="+")
+                            command= "add"+op_suffix+" "+this->registerName+", "+leftExp->registerName+
+                                  ", "+rightExp->registerName;
+                        else
+                            command= "sub"+op_suffix+" "+this->registerName+", "+leftExp->registerName+
+                                     ", "+rightExp->registerName;
+                    }
+                    CodeBuffer::instance().emit(command);
                 }else{
                     errorMismatch(yylineno);
                     exit(1);
                 }
             }
+            Registers::getInstance().regFree(rightExp->registerName);
+
         }
     private:
         ReturnType* getLargerType(){
@@ -263,16 +346,7 @@ namespace FanC{
     };
 
 
-    class BinaryOperation : public Operation {
-    public:
-        string op;
 
-        BinaryOperation(string text) : op(text) {}
-
-        virtual ~BinaryOperation() {
-
-        }
-    };
 
     class Multiplicative : public BinaryOperation {
     public:
@@ -338,7 +412,9 @@ namespace FanC{
     public:
         bool value;
 
-        Boolean(bool val) : UnaryExpression(new BooleanType()), value(val) {}
+        Boolean(bool val) : UnaryExpression(new BooleanType()), value(val) {
+
+        }
 
         Id* isPreconditionable(){
             return NULL;
@@ -395,8 +471,17 @@ namespace FanC{
     class String : public UnaryExpression {
     public:
         string value;
+        string label;
+        String(string text) : UnaryExpression(new StringType()), value(text) {
+            label=CodeBuffer::instance().genLabel();
+            CodeBuffer::instance().emitData(label+": .asciiz "+value );
+            string reg=Registers::getInstance().regAlloc();
+            loadLabel(reg);
+        }
 
-        String(string text) : UnaryExpression(new StringType()), value(text) {}
+        void loadLabel(string reg){
+            CodeBuffer::instance().emit("la "+reg+", "+label);
+        }
 
         Id* isPreconditionable(){
             return NULL;
@@ -413,7 +498,10 @@ namespace FanC{
 
         Number(string text, Type *_type) : UnaryExpression(_type), value(atoi(text.c_str())) {}
 
-        Number(int val, Type *_type) : UnaryExpression(_type), value(val) {}
+        Number(int val, Type *_type) : UnaryExpression(_type), value(val) {
+            registerName = Registers::getInstance().regAlloc();
+            CodeBuffer::instance().emit("li "+registerName+", "+to_string(value));
+        }
 
         Id* isPreconditionable(){
             return NULL;
@@ -429,6 +517,7 @@ namespace FanC{
     public:
         Integer(Number *n) : Number(n->value, new IntType()) {
             delete n;
+
         }
 
         virtual  ~Integer() {

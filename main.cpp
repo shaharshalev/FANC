@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include "main.hpp"
 #include <assert.h>     /* assert */
+#include "registers.hpp"
+#include "bp.hpp"
 using namespace std;
 
 namespace FanC {
@@ -31,11 +33,9 @@ namespace FanC {
                 case Break:
                     errorUnexpectedBreak(yylineno);
                     exit(1);
-                    break;
                 case Continue:
                     errorUnexpectedContinue(yylineno);
                     exit(1);
-                    break;
             }
         }
     }
@@ -183,6 +183,7 @@ namespace FanC {
     void handleIDExpression(Id *id) {
 
         Id *idFromSymbolTable = extractIdFromSymbolTable(id);
+        id->registerName = getRegister(id);
         id->type= idFromSymbolTable->type->clone();
         id->offset = idFromSymbolTable->offset;
     }
@@ -333,6 +334,17 @@ namespace FanC {
     int yyerror(const char * message){
         errorSyn(yylineno);
         exit(1);
+    }
+
+    string getRegister(Expression *exp) {
+        if(exp->registerName!=""){
+            return exp->registerName;
+        }
+        Id* id = extractIdFromSymbolTable((Id*)exp);
+        string regName = Registers::getInstance().regAlloc();
+        string s = "lw "+regName+", "+to_string((id->offset)*(-4))+"($fp)";
+        CodeBuffer::instance().emit(s);
+        return regName;
     }
 
 
