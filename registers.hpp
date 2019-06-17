@@ -11,7 +11,7 @@ class Registers{
 private:
     bool bitmap[NUMBER_OF_REG];
     string names[NUMBER_OF_REG];
-    Registers(){
+    Registers():bitmap(),names(){
         for(int i=TEMP_REG_START;i<TEMP_REG_END;i++) {
             names[i] = "$t" + std::to_string(i);
             bitmap[i]=false;
@@ -25,6 +25,16 @@ public:
     static Registers& getInstance(){
         static Registers INSTANCE;
         return INSTANCE;
+    }
+
+    vector<string> getUsedRegisters(){
+        vector<string> used;
+        for(int i=0;i<NUMBER_OF_REG;i++) {
+            if(bitmap[i]){
+                used.push_back(names[i]);
+            }
+        }
+        return used;
     }
 
     string regAlloc(){
@@ -43,6 +53,7 @@ public:
             if(names[i]==name)
                 bitmap[i]= false;
         }
+        name="";
     }
 
 };

@@ -25,7 +25,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 ADD_EXECUTABLE(hw3 ${BISON_Parser_OUTPUTS} ${FLEX_Lexer_OUTPUTS}
         output.cpp
+        bp.cpp
         main.cpp
         parser.ypp
         scanner.lex
-        registers.hpp)
+        registers.hpp assembler_coder.hpp)

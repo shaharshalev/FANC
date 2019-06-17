@@ -50,7 +50,18 @@ namespace FanC {
 
     string getRegister(Expression* exp);
 
+    void saveReturnValueInCallRegister(Call *call);
+
+    void handleRegisterInAssignmentDecl(Expression *exp);
+
+    void initVariableInStack();
+
+    void changeBranchToVar(Expression* exp);
+
     void checkAndNotifyIfMain(Id *id, FormalList *formals, ReturnType *returnType);
+
     int yyerror(const char * message);
+
+    void initProgramHeader();
 }
 #endif //HW3_MAIN_H

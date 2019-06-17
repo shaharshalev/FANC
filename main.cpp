@@ -4,6 +4,7 @@
 #include <assert.h>     /* assert */
 #include "registers.hpp"
 #include "bp.hpp"
+#include "assembler_coder.hpp"
 using namespace std;
 
 namespace FanC {
@@ -149,6 +150,7 @@ namespace FanC {
         id->updateType(type);
         insertVarToTable(id);
 
+
     }
 
     void handleArgumentDecl(FormalList *formalList) {
@@ -186,7 +188,19 @@ namespace FanC {
         id->registerName = getRegister(id);
         id->type= idFromSymbolTable->type->clone();
         id->offset = idFromSymbolTable->offset;
+        if(id->isBoolean()){
+            int bneAdd = AsssemblerCoder::getInstance().bne("$0",id->registerName);
+            id->trueList = CodeBuffer::instance().makelist(bneAdd);
+            id->falseList = CodeBuffer::instance().makelist(AsssemblerCoder::getInstance().j());
+        }
     }
+
+    void saveRegisterToStack(Id *id, Expression *exp) {
+        changeBranchToVar(exp);//must be before saving to stack
+        AsssemblerCoder::getInstance().sw(exp->registerName,id->offset*(-WORD_SIZE),"$fp");
+        Registers::getInstance().regFree(exp->registerName);
+    }
+
 
     void assignToVar(Id *id, Expression *exp) {
 
@@ -196,9 +210,12 @@ namespace FanC {
             exit(1);
         }
         validateAssignment(idFromSymbolTable, exp);
+
+        saveRegisterToStack(idFromSymbolTable,exp);
         delete id;
         delete exp;
     }
+
 
     void reduceOpenIfScope(Expression *exp) {
 
@@ -342,9 +359,86 @@ namespace FanC {
         }
         Id* id = extractIdFromSymbolTable((Id*)exp);
         string regName = Registers::getInstance().regAlloc();
-        string s = "lw "+regName+", "+to_string((id->offset)*(-4))+"($fp)";
-        CodeBuffer::instance().emit(s);
+        /* the loading from frame pointer will work only if there will
+         * since there are no global variables */
+        AsssemblerCoder::getInstance().lw(regName,id->offset*-4);
         return regName;
+    }
+
+    void divZeroBody(){
+        string errorDivZeroLabel="error_div_zero";
+        AsssemblerCoder::getInstance().emitStringToData(errorDivZeroLabel+":","Error division by zero\\n");
+
+        CodeBuffer::instance().emit((string)DIV_BY_ZERO_LABEL+":");
+        string regName = Registers::getInstance().regAlloc();
+        AsssemblerCoder::getInstance().la(regName,errorDivZeroLabel);
+        /*prepering stack for function print*/
+        AsssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE*3); //make space for 3 reg alloc
+        AsssemblerCoder::getInstance().sw("$fp",2*WORD_SIZE,"$sp");
+        AsssemblerCoder::getInstance().sw("$ra",WORD_SIZE,"$sp");
+        AsssemblerCoder::getInstance().sw(regName,0,"$sp");
+        AsssemblerCoder::getInstance().subu("$fp","$sp",WORD_SIZE);
+        /*jumping to print function*/
+        Registers::getInstance().regFree(regName);
+        AsssemblerCoder::getInstance().jal(PRINT_LABEL);
+        /*restore the reg from stack */
+        AsssemblerCoder::getInstance().lw("$ra",WORD_SIZE,"$sp");
+        AsssemblerCoder::getInstance().lw("$fp",2*WORD_SIZE,"$sp");
+        AsssemblerCoder::getInstance().addu("$sp","$sp",WORD_SIZE*3);
+        AsssemblerCoder::getInstance().exitSyscall();
+    }
+
+    void printBody(){
+        AsssemblerCoder::getInstance().printSyscall(WORD_SIZE);
+        AsssemblerCoder::getInstance().jr();
+    }
+
+    void printiBody(){
+        AsssemblerCoder::getInstance().printiSyscall(WORD_SIZE);
+        AsssemblerCoder::getInstance().jr();
+    }
+
+    void initProgramHeader() {
+
+        divZeroBody();
+        printBody();
+        printiBody();
+
+    }
+
+    void saveReturnValueInCallRegister(Call *call) {
+        call->registerName=Registers::getInstance().regAlloc();
+        AsssemblerCoder::getInstance().move(call->registerName,"$v0");
+    }
+
+    void handleRegisterInAssignmentDecl(Expression *exp) {
+        changeBranchToVar(exp);//must be first
+        AsssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE);
+        AsssemblerCoder::getInstance().sw(exp->registerName,0,"$sp");
+        Registers::getInstance().regFree(exp->registerName);
+    }
+
+    void initVariableInStack() {
+        AsssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE);
+        AsssemblerCoder::getInstance().sw("$0",0,"$sp");
+    }
+
+    void changeBranchToVar(Expression *exp) {
+        if(!exp->isBoolean()) return;
+        string reg=Registers::getInstance().regAlloc();
+        string trueLabel=CodeBuffer::instance().genLabel();
+        AsssemblerCoder& assembler=AsssemblerCoder::getInstance().getInstance();
+        assembler.li(reg,1);
+        vector<int> end=CodeBuffer::makelist(assembler.j());
+
+        string falseLabel=CodeBuffer::instance().genLabel();
+        assembler.li(reg,0);
+        string endLabel=CodeBuffer::instance().genLabel();
+        //back-patching:
+        CodeBuffer::instance().bpatch(end,endLabel);
+        CodeBuffer::instance().bpatch(exp->trueList, trueLabel);
+        CodeBuffer::instance().bpatch(exp->falseList, falseLabel);
+        exp->registerName=reg;
     }
 
 

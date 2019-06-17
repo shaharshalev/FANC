@@ -49,7 +49,10 @@
 
 %%
 
-Program:	OpenScope Funcs	{reduceProgram();}
+Program:	InitProgram OpenScope Funcs	{reduceProgram();}
+;
+
+InitProgram:    {initProgramHeader();}
 ;
 
 Funcs: /*epsilon*/ {}
@@ -104,12 +107,12 @@ Statements: Statement	{}
 ;
 
 Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();}
-	|	Type ID	SC	{handleTypeDecl((Type*)$1,(Id*)$2);}
-	|	Type ID ASSIGN Exp SC	{handleTypeDecl((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4);}
+	|	Type ID	SC	{handleTypeDecl((Type*)$1,(Id*)$2);initVariableInStack();}
+	|	Type ID ASSIGN Exp SC	{handleTypeDecl((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4);handleRegisterInAssignmentDecl((Expression*)$4);}
 	|	ID ASSIGN Exp SC	{assignToVar((Id*)$1,(Expression*)$3);}
 	|	Call SC	{delete $1; }
 	|	RETURN SC	{validateFunctionReturnType(NULL);}
-	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);}
+	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2); /* todo move reg to v0 and check if bool*/}
 	|	IF  OpenIfScope Statement ELSE EndScope OpenScope Statement 	{reduceEndScope();}
 	|	IF  OpenIfScope Statement %prec IFPREC {reduceEndScope();}
 	|	WHILE  OpenWhileScope Statement	{handleWhile();}
@@ -134,17 +137,17 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 	|	Exp MULTIPLICATIVE Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(BinaryOperation*)$2);}
 	|	Exp ADDITIVE Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(BinaryOperation*)$2);}
 	|	ID		{handleIDExpression((Id*)$1);$$ = (Id*)$1;/*allocate reg*/}
-	|	Call	{$$ = (Call*)$1; }
+	|	Call	{$$ = (Call*)$1; saveReturnValueInCallRegister((Call*)$1);/*allocate reg*/ }
 	|	NUM B	{$$ = new Byte((Number*)$1); /*allocate reg*/}
 	|	NUM		{$$ = new Integer((Number*)$1); /*allocate reg*/}
 	|	STRING	{$$ = (String*)$1;  /*allocate reg*/}
-	|	TRUE	{$$ = new Boolean(true);}
-	|	FALSE	{$$ = new Boolean(false);}
+	|	TRUE	{$$ = new Boolean(true);/*allocate reg*/}
+	|	FALSE	{$$ = new Boolean(false);/*allocate reg*/}
 	|	NOT Exp	{$$ = new Not((Expression*)$2);}
 	|	Exp AND Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,new BooleanOperation(And));}
 	|	Exp OR Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,new BooleanOperation(Or));}
-	|	Exp RELATIONAL Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);}
-	|	Exp EQUALITY Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);}
+	|	Exp RELATIONAL Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);/*allocate reg*/}
+	|	Exp EQUALITY Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);/*allocate reg*/}
 ;
 
 OpenWhileScope: LPAREN Exp RPAREN {reduceOpenWhileScope((Expression*)$2);}

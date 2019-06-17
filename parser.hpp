@@ -11,22 +11,31 @@
 #include "output.hpp"
 #include "registers.hpp"
 #include "bp.hpp"
+#include "assembler_coder.hpp"
 
 using namespace std;
 using namespace output;
 extern int yylineno;
-extern int yyparse (void);
+
+extern int yyparse(void);
 
 #define YYSTYPE FanC::Node*
-namespace FanC{
+namespace FanC {
 
     class Relop;
+
     class Id;
+
     class BooleanOperation;
+
     class RelationalOperation;
+
     class EqualityOperation;
+
     class Multiplicative;
+
     class Additive;
+
     class Number;
 
     template<typename CheckType, typename InstanceType>
@@ -47,7 +56,7 @@ namespace FanC{
         Break, Continue
     };
 
-    enum IdentifierType{
+    enum IdentifierType {
         VariableType, FunctionType
     };
 
@@ -55,13 +64,20 @@ namespace FanC{
     public:
         vector<int> trueList;
         vector<int> falseList;
-        string registerName="";
+        string registerName;
+    protected:
+        AsssemblerCoder& assembler = AsssemblerCoder::getInstance();
+        Registers& registers=Registers::getInstance();
+        CodeBuffer& codeBuffer=CodeBuffer::instance();
+    public:
+        Node():trueList(),falseList(),registerName(""){
 
-        virtual ~Node() {}
+        }
+        virtual ~Node() = default;
     };
 
     //Label Marker- a label creator in some place
-    class M:public Node{
+    class M : public Node {
     public:
         string label; // the "quad" - label or address in our case it is just a label
 
@@ -69,102 +85,104 @@ namespace FanC{
 
     class ReturnType : public Node {
     public:
-        virtual string typeName()=0;
-        virtual ReturnType* clone()=0;
+        virtual string typeName() = 0;
 
-        virtual bool canBeAssigned(ReturnType* other){
-            return this->typeName()==other->typeName();
+        virtual ReturnType *clone() = 0;
+
+        virtual bool canBeAssigned(ReturnType *other) {
+            return this->typeName() == other->typeName();
         }
-        virtual ~ReturnType() {}
+
+        virtual ~ReturnType() = default;
 
     };
 
     class Type : public ReturnType {
     public:
-        virtual string typeName(){return "Error<typeName method was called from Type class>";}
-        Type* clone(){
+        virtual string typeName() { return "Error<typeName method was called from Type class>"; }
+
+        Type *clone() {
             return new Type();
         }
-        virtual ~Type() {
 
+        virtual ~Type() =default;
+    };
+
+    class StringType : public Type {
+    public:
+        virtual string typeName() { return "STRING"; }
+
+        StringType *clone() {
+            return new StringType();
         }
+
+        virtual ~StringType() = default;
     };
-
-    class StringType : public Type{
-            public:
-            virtual string typeName(){return "STRING";}
-            StringType* clone(){
-                return new StringType();;
-            }
-            virtual ~StringType() {
-
-            }
-    };
-
 
 
     class Void : public ReturnType {
     public:
-        virtual string typeName(){return "VOID";}
-        Void* clone(){
+        virtual string typeName() { return "VOID"; }
+
+        Void *clone() {
             return new Void();
         }
-        virtual ~Void() {
 
-        }
+        virtual ~Void() =default;
     };
 
     class ByteType : public Type {
     public:
-        virtual string typeName(){return "BYTE";}
-        ByteType* clone(){
+        virtual string typeName() { return "BYTE"; }
+
+        ByteType *clone() {
             return new ByteType();
         }
-        virtual ~ByteType() {
 
-        }
+        virtual ~ByteType()=default;
     };
 
     class IntType : public Type {
     public:
-        virtual string typeName(){return "INT";}
-        IntType* clone(){
+        virtual string typeName() { return "INT"; }
+
+        IntType *clone() {
             return new IntType();
         }
-        bool canBeAssigned(ReturnType* other){
-            return this->typeName()==other->typeName() || other->typeName()==ByteType().typeName();
-        }
-        virtual ~IntType() {
 
+        bool canBeAssigned(ReturnType *other) {
+            return this->typeName() == other->typeName() || other->typeName() == ByteType().typeName();
         }
+
+        virtual ~IntType() =default;
     };
-
 
 
     class BooleanType : public Type {
     public:
-        virtual string typeName(){return "BOOL";}
-        BooleanType* clone(){
+        virtual string typeName() { return "BOOL"; }
+
+        BooleanType *clone() {
             return new BooleanType();
         }
-        virtual ~BooleanType() {
 
-        }
+        virtual ~BooleanType() =default;
     };
 
     class Expression : public Node {
     public:
         ReturnType *type;
 
-        Expression(ReturnType *_type) : type(_type) {}
+        explicit Expression(ReturnType *_type) : type(_type) {}
 
-        virtual Id* isPreconditionable()=0;
+        virtual Id *isPreconditionable() = 0;
 
-        bool isBoolean(){
-            return this->type->typeName()==BooleanType().typeName();
+        bool isBoolean() {
+            return this->type->typeName() == BooleanType().typeName();
         }
-        bool isNumric(){
-            bool value=isInstanceOf<ByteType>(type) || isInstanceOf<IntType>(type);
+
+        bool isNumric() {
+            bool value = isInstanceOf<ByteType>(type) || isInstanceOf<IntType>(type);
             return value;
         }
 
@@ -177,31 +195,25 @@ namespace FanC{
 
     class Operation : public Node {
     public:
-        virtual ~Operation() {
-
-        }
+        virtual ~Operation() =default;
     };
 
     class BinaryOperation : public Operation {
     public:
         string op;
 
-        BinaryOperation(string text) : op(text) {}
+        explicit BinaryOperation(string text) : op(text) {}
 
-        virtual ~BinaryOperation() {
-
-        }
+        virtual ~BinaryOperation() =default;
     };
 
     class Relop : public Operation {
     public:
         string op;
 
-        Relop(string text) : op(text) {}
+        explicit Relop(string text) : op(text) {}
 
-        virtual ~Relop() {
-
-        }
+        virtual ~Relop() =default;
     };
 
 
@@ -211,98 +223,94 @@ namespace FanC{
         Expression *rightExp;
         Operation *op;
 
-        Id* isPreconditionable(){
-            Id *id =leftExp->isPreconditionable();
-            if( id!= NULL) return id;
+        Id *isPreconditionable() {
+            Id *id = leftExp->isPreconditionable();
+            if (id != NULL) return id;
             id = rightExp->isPreconditionable();
             return id;
         }
 
         BinaryExpression(Expression *_leftExp, Expression *_rightExp, Operation *_op)
                 : Expression(NULL), leftExp(_leftExp), rightExp(_rightExp), op(_op) {
+            if (isInstanceOf<Relop>(_op)) {
+                if (leftExp->isNumric() && rightExp->isNumric()) {
+                    this->type = new BooleanType();
+                    string _operation = ((Relop *) _op)->op;
+                    int cmdAddress;
+                    if (_operation == "==") {
+                        cmdAddress = assembler.beq(leftExp->registerName, rightExp->registerName);
+                    } else if (_operation == "!=") {
+                        cmdAddress = assembler.bne(leftExp->registerName, rightExp->registerName);
 
-            if(isInstanceOf<Relop>(_op)){
-                if(leftExp->isNumric() && rightExp->isNumric()){
-                    this->type=new BooleanType();
-                    //todo emit branch that match relop
-                    string _operation=((Relop*)_op)->op;
-                    string cmd;
-                    if(_operation=="=="){
-                        cmd="beq ";
-                    }else if(_operation=="!="){
-                        cmd="bne ";
-                    }else if(_operation=="<="){
-                        cmd="ble ";
-                    }else if(_operation=="<"){
-                        cmd="blt ";
-                    }else if(_operation==">="){
-                        cmd="bge ";
-                    }else { // _operation is >
-                        cmd="bgt ";
+                    } else if (_operation == "<=") {
+                        cmdAddress = assembler.ble(leftExp->registerName, rightExp->registerName);
+                    } else if (_operation == "<") {
+                        cmdAddress = assembler.blt(leftExp->registerName, rightExp->registerName);
+                    } else if (_operation == ">=") {
+                        cmdAddress = assembler.bge(leftExp->registerName, rightExp->registerName);
+                    } else { // _operation is >
+                        cmdAddress = assembler.bgt(leftExp->registerName, rightExp->registerName);
                     }
-                    cmd+=leftExp->registerName+", " +rightExp->registerName
-                    +", "; //to be patched;
-                    this->trueList=CodeBuffer::instance().makelist(CodeBuffer::instance().emit(cmd));
-                    this->falseList=CodeBuffer::instance().makelist(CodeBuffer::instance().emit("j "));
-                    Registers::getInstance().regFree(leftExp->registerName);
-                }else{
+                    this->trueList = codeBuffer.makelist(cmdAddress);
+                    this->falseList = codeBuffer.makelist(assembler.j());
+                    registers.regFree(leftExp->registerName);
+                    registers.regFree(rightExp->registerName);
+                } else {
                     errorMismatch(yylineno);
                     exit(1);
                 }
-            }else if(isInstanceOf<BooleanOperation>(_op)){
-                if(leftExp->isBoolean() && rightExp->isBoolean()){
-                    this->type=new BooleanType();
+            } else if (isInstanceOf<BooleanOperation>(_op)) {
+                if (leftExp->isBoolean() && rightExp->isBoolean()) {
+                    this->type = new BooleanType();
                     //todo emit branch that match relop
-                }else{
+                } else {
                     errorMismatch(yylineno);
                     exit(1);
                 }
-            }else if(isInstanceOf<Multiplicative>(_op) || isInstanceOf<Additive>(_op)){
-                if(leftExp->isNumric() && rightExp->isNumric()){
-                    this->type=getLargerType();
+            } else if (isInstanceOf<Multiplicative>(_op) || isInstanceOf<Additive>(_op)) {
+                if (leftExp->isNumric() && rightExp->isNumric()) {
+                    this->type = getLargerType();
                     this->registerName = leftExp->registerName;
-                    string command;
-                    string _operator=((BinaryOperation*)_op)->op;
-                    if(isInstanceOf<Multiplicative>(_op)){
-                        if(_operator=="*")
-                            command= "mul "+this->registerName+", "+leftExp->registerName+
-                                ", "+rightExp->registerName;
-                        else if(_operator=="/"){
-                            command= "div "+this->registerName+", "+leftExp->registerName+
-                                     ", "+rightExp->registerName;
-                            //TODO: add code for division by zero
+                    string _operator = ((BinaryOperation *) _op)->op;
+                    if (isInstanceOf<Multiplicative>(_op)) {
+                        if (_operator == "*") {
+                            assembler.mul(registerName, leftExp->registerName, rightExp->registerName);
+                        } else if (_operator == "/") {
+                            assembler.div(registerName, leftExp->registerName, rightExp->registerName);
                         }
 
-                    }else{ //Additive
-                        string op_suffix="";
-                        if(this->type->typeName()==ByteType().typeName()){
-                            op_suffix="u";
+                    } else { //Additive
+                        if (_operator == "+")
+                            assembler.addu(registerName, leftExp->registerName, rightExp->registerName);
+                        else {
+                            assembler.subu(registerName, leftExp->registerName, rightExp->registerName);
                         }
-                        if(_operator=="+")
-                            command= "add"+op_suffix+" "+this->registerName+", "+leftExp->registerName+
-                                  ", "+rightExp->registerName;
-                        else
-                            command= "sub"+op_suffix+" "+this->registerName+", "+leftExp->registerName+
-                                     ", "+rightExp->registerName;
+
                     }
-                    CodeBuffer::instance().emit(command);
-                }else{
+                } else {
                     errorMismatch(yylineno);
                     exit(1);
                 }
+
+                if (this->type->typeName() == ByteType().typeName()) {
+                    assembler.andi(registerName,registerName,255);
+                }
+                registers.regFree(rightExp->registerName);
             }
-            Registers::getInstance().regFree(rightExp->registerName);
+
 
         }
+
     private:
-        ReturnType* getLargerType(){
+        ReturnType *getLargerType() {
             if (isSameType<ByteType>(leftExp->type, rightExp->type)
                 || isSameType<IntType>(leftExp->type, rightExp->type)) {
                 return leftExp->type->clone();
             } else {
-                return  new IntType();
+                return new IntType();
             }
         }
+
     public:
 
         virtual ~BinaryExpression() {
@@ -316,25 +324,26 @@ namespace FanC{
 
     class UnaryExpression : public Expression {
     public:
-        UnaryExpression(ReturnType *_type) : Expression(_type) {}
+        explicit UnaryExpression(ReturnType *_type) : Expression(_type) {}
 
-        virtual ~UnaryExpression() {
-
-        };
+        virtual ~UnaryExpression()=default;
     };
 
     class Not : public UnaryExpression {
     public:
         Expression *exp;
 
-        Not(Expression *_exp) : UnaryExpression(new BooleanType()), exp(_exp) {
-            if(!exp->isBoolean()){
+        explicit Not(Expression *_exp) : UnaryExpression(new BooleanType()), exp(_exp) {
+            if (!exp->isBoolean()) {
                 errorMismatch(yylineno);
                 exit(1);
             }
+
+            trueList = exp->falseList;
+            falseList = exp->trueList;
         }
 
-        Id* isPreconditionable(){
+        Id *isPreconditionable() {
             return NULL;
         }
 
@@ -346,62 +355,42 @@ namespace FanC{
     };
 
 
-
-
     class Multiplicative : public BinaryOperation {
     public:
-        Multiplicative(string text) : BinaryOperation(text) {}
+        explicit Multiplicative(string text) : BinaryOperation(text) {}
 
-        virtual ~Multiplicative() {
-
-        }
+        virtual ~Multiplicative() =default;
     };
 
     class Additive : public BinaryOperation {
     public:
-        Additive(string text) : BinaryOperation(text) {}
+        explicit Additive(string text) : BinaryOperation(text) {}
 
-        virtual ~Additive() {
-
-        }
+        virtual ~Additive() =default;
     };
 
-    class Relop : public Operation {
-    public:
-        string op;
-
-        Relop(string text) : op(text) {}
-
-        virtual ~Relop() {
-
-        }
-    };
 
     class RelationalOperation : public Relop {
     public:
 
-        RelationalOperation(string text) : Relop(text) {}
+        explicit RelationalOperation(string text) : Relop(text) {}
 
-        virtual ~RelationalOperation() {
-
-        }
+        virtual ~RelationalOperation() =default;
     };
 
     class EqualityOperation : public Relop {
     public:
 
-        EqualityOperation(string text) : Relop(text) {}
+        explicit EqualityOperation(string text) : Relop(text) {}
 
-        virtual ~EqualityOperation() {
-
-        }
+        virtual ~EqualityOperation() =default;
     };
 
     class BooleanOperation : public Operation {
     public:
         BoolOp op;
 
-        BooleanOperation(BoolOp o) : op(o) {}
+        explicit BooleanOperation(BoolOp o) : op(o) {}
 
         virtual ~BooleanOperation() {
 
@@ -412,11 +401,15 @@ namespace FanC{
     public:
         bool value;
 
-        Boolean(bool val) : UnaryExpression(new BooleanType()), value(val) {
-
+        explicit Boolean(bool val) : UnaryExpression(new BooleanType()), value(val) {
+            if(val){
+                trueList = codeBuffer.makelist(assembler.j());
+            }else{
+                falseList = codeBuffer.makelist(assembler.j());
+            }
         }
 
-        Id* isPreconditionable(){
+        Id *isPreconditionable() {
             return NULL;
         }
 
@@ -430,41 +423,43 @@ namespace FanC{
         string name;
         int offset;
         IdentifierType idType;
-        friend bool operator==(const Id& ,const Id& );
-        friend bool operator!=(const Id& ,const Id& );
 
-        Id(string text) : UnaryExpression(new Type()), name(text),idType(VariableType) {}
+        friend bool operator==(const Id &, const Id &);
 
-        Id(string text,ReturnType* _type,IdentifierType _idType) : UnaryExpression(_type),
-        name(text),idType(_idType) {}
+        friend bool operator!=(const Id &, const Id &);
 
-        Id(Id* id):UnaryExpression(id->type->clone()) {
-                name = id->name;
-                offset = id->offset;
-                idType = id->idType;
+        explicit Id(string text) : UnaryExpression(new Type()), name(text), idType(VariableType) {}
+
+        Id(string text, ReturnType *_type, IdentifierType _idType) : UnaryExpression(_type),
+                                                                     name(text), idType(_idType) {}
+
+        explicit Id(Id *id) : UnaryExpression(id->type->clone()) {
+            name = id->name;
+            offset = id->offset;
+            idType = id->idType;
         }
 
-        Id* isPreconditionable(){
-            if(offset<0)return NULL;
+        Id *isPreconditionable() {
+            if (offset < 0)return NULL;
             return this;
         }
 
-        Id* changeIdTypeToFunction(){
-            idType=FunctionType;
+        Id *changeIdTypeToFunction() {
+            idType = FunctionType;
             return this;
         }
-        Id* updateType(Type* t){
+
+        Id *updateType(Type *t) {
             delete this->type;
             this->type = t;
             return this;
         }
-        bool isFunction(){
-            return idType==FunctionType;
+
+        bool isFunction() {
+            return idType == FunctionType;
         }
 
-        virtual ~Id() {
-
-        }
+        virtual ~Id()=default;
     };
 
 
@@ -472,24 +467,19 @@ namespace FanC{
     public:
         string value;
         string label;
-        String(string text) : UnaryExpression(new StringType()), value(text) {
-            label=CodeBuffer::instance().genLabel();
-            CodeBuffer::instance().emitData(label+": .asciiz "+value );
-            string reg=Registers::getInstance().regAlloc();
-            loadLabel(reg);
+        explicit String(string text) : UnaryExpression(new StringType()), value(text), label(CodeBuffer::instance().genLabel()){
+            assembler.emitStringToData(label, value);
+            registerName =  registers.regAlloc();
+            assembler.la(registerName , label);
+
         }
 
-        void loadLabel(string reg){
-            CodeBuffer::instance().emit("la "+reg+", "+label);
-        }
 
-        Id* isPreconditionable(){
+        Id *isPreconditionable() {
             return NULL;
         }
 
-        virtual ~String() {
-
-        }
+        virtual ~String() =default;
     };
 
     class Number : public UnaryExpression {
@@ -499,11 +489,11 @@ namespace FanC{
         Number(string text, Type *_type) : UnaryExpression(_type), value(atoi(text.c_str())) {}
 
         Number(int val, Type *_type) : UnaryExpression(_type), value(val) {
-            registerName = Registers::getInstance().regAlloc();
-            CodeBuffer::instance().emit("li "+registerName+", "+to_string(value));
+            registerName = registers.regAlloc();
+            assembler.li(registerName, val);
         }
 
-        Id* isPreconditionable(){
+        Id *isPreconditionable() {
             return NULL;
         }
 
@@ -515,7 +505,7 @@ namespace FanC{
 
     class Integer : public Number {
     public:
-        Integer(Number *n) : Number(n->value, new IntType()) {
+        explicit Integer(Number *n) : Number(n->value, new IntType()) {
             delete n;
 
         }
@@ -527,7 +517,7 @@ namespace FanC{
 
     class Byte : public Number {
     public:
-        Byte(Number *num) : Number(num->value, new ByteType()) {
+        explicit Byte(Number *num) : Number(num->value, new ByteType()) {
 
 
             delete num; //check
@@ -540,13 +530,13 @@ namespace FanC{
 
         }
 
-        virtual  ~Byte() {}
+        virtual  ~Byte() = default;
     };
 
     class FormalDec : public Node {
     public:
-        Type* type;
-        Id* id;
+        Type *type;
+        Id *id;
 
         FormalDec(Type *_type, Id *_id) : type(_type), id(_id) {
 
@@ -565,35 +555,33 @@ namespace FanC{
     public:
         vector<FormalDec *> decelerations;
 
-        FormalList() {}
+        FormalList() =default;
 
-        FormalList(FormalDec *formalDec) {
+        explicit FormalList(FormalDec *formalDec) {
 
             add(formalDec);
 
         }
 
-        FormalList* add(FormalDec *formalDec) {
-                decelerations.insert(decelerations.begin(), formalDec);
+        FormalList *add(FormalDec *formalDec) {
+            decelerations.insert(decelerations.begin(), formalDec);
             return this;
         }
 
-        int size(){return decelerations.size(); }
+        int size() { return decelerations.size(); }
 
-        virtual ~FormalList() {
-
-        }
+        virtual ~FormalList()=default;
     };
 
     class PreCondition : public Node {
     public:
         Expression *exp;
 
-        PreCondition(Expression *_exp) : exp(_exp) {
+        explicit PreCondition(Expression *_exp) : exp(_exp) {
 
         }
 
-        Id* isExpressionValid(){
+        Id *isExpressionValid() {
 
             return exp->isPreconditionable();
         }
@@ -609,9 +597,7 @@ namespace FanC{
     public:
         vector<PreCondition *> preconditions;
 
-        PreConditions() {
-
-        }
+        PreConditions() = default;
 
         PreConditions *add(PreCondition *precond) {
 
@@ -624,12 +610,12 @@ namespace FanC{
             return preconditions.size();
         }
 
-        Id* isValid(){
+        Id *isValid() {
 
-            vector<PreCondition *>::iterator it=preconditions.begin();
-            while(it!=preconditions.end()){
+            vector<PreCondition *>::iterator it = preconditions.begin();
+            while (it != preconditions.end()) {
                 Id *i = (*it)->isExpressionValid();
-                if(i!=NULL)
+                if (i != NULL)
                     return i;
                 ++it;
             }
@@ -646,30 +632,27 @@ namespace FanC{
     };
 
 
-
     class ExpressionList : public Node {
-            public:
-            vector<Expression *> expressions;
+    public:
+        vector<Expression *> expressions;
 
-            ExpressionList() {}
+        ExpressionList() {}
 
-            ExpressionList(Expression *exp) {
-                expressions.insert(expressions.begin(), exp);
+        explicit ExpressionList(Expression *exp) {
+            expressions.insert(expressions.begin(), exp);
+        }
+
+        ExpressionList *add(Expression *exp) {
+            expressions.insert(expressions.begin(), exp);
+            return this;
+        }
+
+        virtual ~ExpressionList() {
+            for (vector<Expression *>::iterator it = expressions.begin(); it != expressions.end(); ++it) {
+                delete *it;
             }
-
-            ExpressionList *add(Expression *exp) {
-                expressions.insert(expressions.begin(), exp);
-                return this;
-            }
-
-            virtual ~ExpressionList() {
-                for (vector<Expression *>::iterator it = expressions.begin(); it != expressions.end(); ++it) {
-                    delete *it;
-                }
-            }
+        }
     };
-
-
 
 
     class FuncDec : public Node {
@@ -678,8 +661,10 @@ namespace FanC{
         Id *id;
         FormalList *arguments;
         PreConditions *conditions;
-        friend bool operator==(const FuncDec& ,const FuncDec& );
-        friend bool operator!=(const FuncDec& ,const FuncDec& );
+
+        friend bool operator==(const FuncDec &, const FuncDec &);
+
+        friend bool operator!=(const FuncDec &, const FuncDec &);
 
 
         FuncDec(ReturnType *_returnType,
@@ -690,11 +675,10 @@ namespace FanC{
                                               conditions(_conditions) {}
 
 
-
-        vector<string>* getArgsAsString(){
+        vector<string> *getArgsAsString() {
             vector<FormalDec *>::iterator it = this->arguments->decelerations.begin();
-            vector<string>* typesName = new vector<string>();
-            while(it != arguments->decelerations.end()){
+            vector<string> *typesName = new vector<string>();
+            while (it != arguments->decelerations.end()) {
                 typesName->push_back((*it)->type->typeName());
                 ++it;
             }
@@ -702,20 +686,20 @@ namespace FanC{
         }
 
 
-        bool isArgumentListMatch(ExpressionList* expList){
+        bool isArgumentListMatch(ExpressionList *expList) {
 
             vector<Expression *>::iterator expIt = expList->expressions.begin();
             vector<FormalDec *>::iterator formalIt = this->arguments->decelerations.begin();
-            while( (expIt != expList->expressions.end()) && (formalIt != arguments->decelerations.end())){
-                Expression* currentExp=*expIt;
-                FormalDec* currentArgument=*formalIt;
-                if(!currentArgument->type->canBeAssigned(currentExp->type))
+            while ((expIt != expList->expressions.end()) && (formalIt != arguments->decelerations.end())) {
+                Expression *currentExp = *expIt;
+                FormalDec *currentArgument = *formalIt;
+                if (!currentArgument->type->canBeAssigned(currentExp->type))
                     return false;
 
                 ++expIt;
                 ++formalIt;
             }
-            if(expIt != expList->expressions.end() || formalIt != arguments->decelerations.end())
+            if (expIt != expList->expressions.end() || formalIt != arguments->decelerations.end())
                 return false;
 
             return true;
@@ -733,21 +717,20 @@ namespace FanC{
     };
 
 
-
     class Call : public UnaryExpression {
     public:
         Id *id;
         ExpressionList *expressions;
 
         Call(ReturnType *_returnType, Id *_id, ExpressionList *_expressions)
-                : UnaryExpression(_returnType->clone()),id(_id), expressions(_expressions) {}
+                : UnaryExpression(_returnType->clone()), id(_id), expressions(_expressions) {}
 
-        Id* isPreconditionable(){
+        Id *isPreconditionable() {
 
-            vector<Expression*>::iterator it=expressions->expressions.begin();
-            while(it!=expressions->expressions.end()){
-                Id* i=(*it)->isPreconditionable();
-                if(NULL!=i)
+            vector<Expression *>::iterator it = expressions->expressions.begin();
+            while (it != expressions->expressions.end()) {
+                Id *i = (*it)->isPreconditionable();
+                if (NULL != i)
                     return i;
                 ++it;
             }
@@ -764,36 +747,37 @@ namespace FanC{
 
     class Scope {
     public:
-        vector<Id*> variables;
-        vector<FuncDec*> functions;
-        Scope* parent;
-        Scope(){
+        vector<Id *> variables;
+        vector<FuncDec *> functions;
+        Scope *parent;
 
-            parent=NULL;
+        Scope() :variables(),functions(),parent(NULL){
         }
-        Scope(Scope* _parent):parent(_parent){}
+
+        explicit Scope(Scope *_parent) : parent(_parent) {}
 
 
-        void addVariable(Id* id){
+        void addVariable(Id *id) {
 
             variables.push_back(id);
         }
-        void addFunction(FuncDec* func){
+
+        void addFunction(FuncDec *func) {
 
             func->id->changeIdTypeToFunction();
             functions.push_back(func);
-            Id * i = new Id(func->id);
+            Id *i = new Id(func->id);
             variables.push_back(i);
 
         }
 
     private:
-        bool isFunctionExistInScope(FuncDec* func){
+        bool isFunctionExistInScope(FuncDec *func) {
 
-            vector<FuncDec*>::iterator it=functions.begin();
-            while(it!=functions.end()){
-                FuncDec* currentFunc=*it;
-                if(*func == *currentFunc)
+            vector<FuncDec *>::iterator it = functions.begin();
+            while (it != functions.end()) {
+                FuncDec *currentFunc = *it;
+                if (*func == *currentFunc)
                     return true;
                 ++it;
             }
@@ -801,11 +785,11 @@ namespace FanC{
         }
 
 
-        FuncDec* getFunctionInScope(Id* id){
+        FuncDec *getFunctionInScope(Id *id) {
 
             for (vector<FuncDec *>::iterator it = functions.begin(); it != functions.end(); ++it) {
-                FuncDec* currentFunc=*it;
-                if( *currentFunc->id == *id){
+                FuncDec *currentFunc = *it;
+                if (*currentFunc->id == *id) {
                     return *it;
                 }
             }
@@ -819,33 +803,35 @@ namespace FanC{
          * @param func is the function
          * @return true if exists, false otherwise
          */
-        bool isFunctionExist(FuncDec* func){
-            if(isFunctionExistInScope(func)) {
+        bool isFunctionExist(FuncDec *func) {
+            if (isFunctionExistInScope(func)) {
                 return true;
-            }else if(NULL != parent){
+            } else if (NULL != parent) {
                 return parent->isFunctionExist(func);
-            }else{
+            } else {
                 return false;
             }
         }
-        virtual FuncDec* getFunction(Id* id){
 
-            FuncDec* found=getFunctionInScope(id);
-            if(NULL != found){
+        virtual FuncDec *getFunction(Id *id) {
+
+            FuncDec *found = getFunctionInScope(id);
+            if (NULL != found) {
                 return found;
-            }else if(NULL != parent){
+            } else if (NULL != parent) {
                 return parent->getFunction(id);
-            }else{
+            } else {
                 return NULL;
             }
         }
-    private:
-        Id* getVariableInScope(Id* id){
 
-            vector<Id *>::iterator it=variables.begin();
-            while( it!= variables.end()){
-                Id* currentId= *it;
-                if(*id==*currentId)
+    private:
+        Id *getVariableInScope(Id *id) {
+
+            vector<Id *>::iterator it = variables.begin();
+            while (it != variables.end()) {
+                Id *currentId = *it;
+                if (*id == *currentId)
                     return *it;
                 ++it;
             }
@@ -858,28 +844,28 @@ namespace FanC{
          * @param id
          * @return the id from the symbolTable, NULL if no such id exist
          */
-        Id* getVariable(Id* id){
+        Id *getVariable(Id *id) {
 
-            Id* found=getVariableInScope(id);
-            if(NULL != found){
+            Id *found = getVariableInScope(id);
+            if (NULL != found) {
                 return found;
-            }else if(NULL != parent){
+            } else if (NULL != parent) {
                 return parent->getVariable(id);
-            }else{
+            } else {
                 return NULL;
             }
         }
 
-        void printIds(){
+        void printIds() {
 
             for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
-                if((*it)->isFunction()){
-                    FuncDec* fun = getFunction(*it);
-                    vector<string>* args=fun->getArgsAsString();
-                    string func_type=makeFunctionType(fun->returnType->typeName(), *args);
+                if ((*it)->isFunction()) {
+                    FuncDec *fun = getFunction(*it);
+                    vector<string> *args = fun->getArgsAsString();
+                    string func_type = makeFunctionType(fun->returnType->typeName(), *args);
                     delete args;
-                    output::printID((*it)->name,0,func_type);
-                }else {
+                    output::printID((*it)->name, 0, func_type);
+                } else {
                     output::printID((*it)->name, (*it)->offset, (*it)->type->typeName());
                 }
             }
@@ -894,7 +880,7 @@ namespace FanC{
 
         }
 
-        virtual ~Scope(){
+        virtual ~Scope() {
 
             for (vector<Id *>::iterator it = variables.begin(); it != variables.end(); ++it) {
                 delete *it;
@@ -911,43 +897,42 @@ namespace FanC{
 
     class WhileScope : public Scope {
     public:
-        WhileScope(Scope* _parent):Scope(_parent){}
-        virtual ~WhileScope(){
+        explicit WhileScope(Scope *_parent) : Scope(_parent) {}
 
-        }
+        virtual ~WhileScope() = default;
     };
 
     class FunctionScope : public Scope {
     public:
-        FuncDec* func;
+        FuncDec *func;
 
-        FunctionScope(Scope* _parent):Scope(_parent){}
+        explicit FunctionScope(Scope *_parent) : Scope(_parent),func(NULL) {}
 
-        void updateFunctionScope(FuncDec* _func){
-            func=_func;
-            if(NULL != this->parent)
+        void updateFunctionScope(FuncDec *_func) {
+            func = _func;
+            if (NULL != this->parent)
                 parent->addFunction(_func);
         }
-        void updateFunctionScope(PreConditions* preconditions){
-            func->conditions=preconditions;
+
+        void updateFunctionScope(PreConditions *preconditions) {
+            func->conditions = preconditions;
         }
 
-        FuncDec* getFunction(){
+        FuncDec *getFunction() {
             return func;
         }
 
-        void endScope()  {
+        void endScope() {
 
             output::endScope();
-            output::printPreconditions(func->id->name,func->conditions->size());
+            output::printPreconditions(func->id->name, func->conditions->size());
             printIds();
 
         }
-        virtual ~FunctionScope(){
 
-        }
+        virtual ~FunctionScope() = default;
     };
-    
+
 }
 
 #endif //_PARSER_H
