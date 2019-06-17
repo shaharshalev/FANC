@@ -724,7 +724,23 @@ namespace FanC {
         ExpressionList *expressions;
 
         Call(ReturnType *_returnType, Id *_id, ExpressionList *_expressions)
-                : UnaryExpression(_returnType->clone()), id(_id), expressions(_expressions) {}
+                : UnaryExpression(_returnType->clone()), id(_id), expressions(_expressions) {
+            assembler.subu("$sp","$sp",WORD_SIZE*2);
+            assembler.sw("$fp",WORD_SIZE,"$sp");
+            assembler.sw("$ra",0,"$sp");
+            int argsSize = expressions->expressions.size();
+            assembler.subu("$sp","$sp",WORD_SIZE*argsSize);
+            for(int i = 0; i < argsSize; i++){
+                string& reg = expressions->expressions[i]->registerName;
+                assembler.sw(reg,i*WORD_SIZE,"$sp");
+                Registers::getInstance().regFree(reg);
+            }
+            assembler.jal(id->name);
+            assembler.addu("$sp","$sp",WORD_SIZE*argsSize);
+            assembler.lw("$ra",0,"$sp");
+            assembler.lw("$fp",WORD_SIZE,"$sp");
+            assembler.addu("$sp","$sp",WORD_SIZE*2);
+        }
 
         Id *isPreconditionable() {
 

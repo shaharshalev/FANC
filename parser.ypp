@@ -124,8 +124,8 @@ Call:	ID LPAREN ExpList RPAREN	{$$=handleCall((Id*)$1,(ExpressionList*)$3);}
 	|	ID LPAREN RPAREN	{$$ = handleCall(((Id*)$1),new ExpressionList());}
 ;
 
-ExpList: Exp	{$$=new ExpressionList((Expression*)$1);}
-	|	Exp COMMA ExpList	{$$=((ExpressionList*)$3)->add((Expression*)$1);}
+ExpList: Exp	{changeBranchToVar((Expression*)$1);$$=new ExpressionList((Expression*)$1);}
+	|	Exp COMMA ExpList	{changeBranchToVar((Expression*)$1);$$=((ExpressionList*)$3)->add((Expression*)$1);}
 ;
 
 Type: INT	{$$=new IntType();}
