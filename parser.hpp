@@ -467,7 +467,8 @@ namespace FanC {
     public:
         string value;
         string label;
-        explicit String(string text) : UnaryExpression(new StringType()), value(text), label(CodeBuffer::instance().genLabel()){
+        explicit String(string text) : UnaryExpression(new StringType()), value(text), label(""){
+            label=CodeBuffer::instance().genLabel();
             assembler.emitStringToData(label, value);
             registerName =  registers.regAlloc();
             assembler.la(registerName , label);
