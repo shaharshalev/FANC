@@ -21,6 +21,15 @@ private:
             bitmap[i]=false;
         }
     }
+
+    int nameToIndex(string regName){
+
+        for(int i = TEMP_REG_START;i<NUMBER_OF_REG;++i){
+            if(names[i] == regName) return i;
+        }
+        throw invalid_argument(regName + "does not exist");
+    }
+
 public:
     static Registers& getInstance(){
         static Registers INSTANCE;
@@ -35,6 +44,13 @@ public:
             }
         }
         return used;
+    }
+
+
+
+    void markAsUsed(string reg){
+        int index = nameToIndex(reg);
+        bitmap[index] = true;
     }
 
     string regAlloc(){

@@ -111,8 +111,8 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();}
 	|	Type ID ASSIGN Exp SC	{handleTypeDecl((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4);handleRegisterInAssignmentDecl((Expression*)$4);}
 	|	ID ASSIGN Exp SC	{assignToVar((Id*)$1,(Expression*)$3);}
 	|	Call SC	{delete $1; }
-	|	RETURN SC	{validateFunctionReturnType(NULL);}
-	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2); /* todo move reg to v0 and check if bool*/}
+	|	RETURN SC	{validateFunctionReturnType(NULL);jumpToCaller();}
+	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);updateReturnReg((Expression*)$1);jumpToCaller(); /* todo move reg to v0 and check if bool*/}
 	|	IF  OpenIfScope Statement ELSE EndScope OpenScope Statement 	{reduceEndScope();}
 	|	IF  OpenIfScope Statement %prec IFPREC {reduceEndScope();}
 	|	WHILE  OpenWhileScope Statement	{handleWhile();}

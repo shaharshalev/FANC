@@ -725,6 +725,9 @@ namespace FanC {
 
         Call(ReturnType *_returnType, Id *_id, ExpressionList *_expressions)
                 : UnaryExpression(_returnType->clone()), id(_id), expressions(_expressions) {
+            assembler.comment("call to function - saving regs");
+            vector<string> used = registers.getUsedRegisters();
+            saveAndFreeRegs(used);
             assembler.subu("$sp","$sp",WORD_SIZE*2);
             assembler.sw("$fp",WORD_SIZE,"$sp");
             assembler.sw("$ra",0,"$sp");
@@ -735,11 +738,15 @@ namespace FanC {
                 assembler.sw(reg,i*WORD_SIZE,"$sp");
                 Registers::getInstance().regFree(reg);
             }
+            assembler.comment("jump to function - "+id->name);
             assembler.jal(id->name);
+            assembler.comment("return from functionn  - "+id->name + "restoring the regs");
             assembler.addu("$sp","$sp",WORD_SIZE*argsSize);
             assembler.lw("$ra",0,"$sp");
             assembler.lw("$fp",WORD_SIZE,"$sp");
             assembler.addu("$sp","$sp",WORD_SIZE*2);
+            restoreRegs(used);
+            assembler.comment("end Call");
         }
 
         Id *isPreconditionable() {
@@ -758,6 +765,27 @@ namespace FanC {
 
             delete expressions;
             delete id;
+
+        }
+
+    private:
+
+        void restoreRegs(vector<string> &regs) {
+            assembler.comment("restore all used regs");
+            for(int i=0;i<regs.size();i++){
+                assembler.lw(regs[i],WORD_SIZE*i,"$sp");
+                registers.markAsUsed(regs[i]);
+            }
+            assembler.addu("$sp","$sp",regs.size()*WORD_SIZE);
+        }
+
+        void saveAndFreeRegs(vector<string> &regs) {
+            assembler.comment("save all used regs");
+            assembler.subu("$sp","$sp",regs.size()*WORD_SIZE);
+            for(int i=0;i<regs.size();i++){
+                assembler.sw(regs[i],WORD_SIZE*i,"$sp");
+                registers.regFree(regs[i]);
+            }
 
         }
     };

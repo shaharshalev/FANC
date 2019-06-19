@@ -120,6 +120,10 @@ public:
         CodeBuffer::instance().emit("syscall");
     }
 
+    void comment(string str){
+        CodeBuffer::instance().emit("#"+str);
+    }
+
 
 
 };

@@ -63,5 +63,11 @@ namespace FanC {
     int yyerror(const char * message);
 
     void initProgramHeader();
+
+    void jumpToCaller();
+
+    void updateReturnReg(Expression* exp);
+
+
 }
 #endif //HW3_MAIN_H

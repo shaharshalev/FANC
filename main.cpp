@@ -441,5 +441,19 @@ namespace FanC {
         exp->registerName=reg;
     }
 
+    void jumpToCaller() {
+        AsssemblerCoder& assembler=AsssemblerCoder::getInstance().getInstance();
+        assembler.comment("return from function");
+        assembler.jr();
+    }
+
+    void updateReturnReg(Expression *exp) {
+        AsssemblerCoder& assembler=AsssemblerCoder::getInstance().getInstance();
+        assembler.move("$v0",exp->registerName);
+        Registers::getInstance().regFree(exp->registerName);
+    }
+
+
+
 
 }
