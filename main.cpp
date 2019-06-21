@@ -11,6 +11,7 @@ namespace FanC {
     vector<Scope *> symbolTable;
     vector<int> offsets;
     bool isMainExist = false;
+    void foldScope();
 
 
 
@@ -330,12 +331,17 @@ namespace FanC {
         return numVarsBefore - numVarsAfter;
     }
 
-    void reduceStatement() {
+
+    void foldScope(){
         int numVars = reduceEndScope();
         AssemblerCoder::getInstance().comment("return sp to the start of this scope");
         AssemblerCoder::getInstance().addu("$sp","$sp",WORD_SIZE*numVars);
-
     }
+
+    void reduceStatement() {
+        foldScope();
+    }
+
 
 
 
@@ -352,9 +358,22 @@ namespace FanC {
         reduceEndScope();
     }
 
-    void handleWhile() {
+    Statement * handleWhile(M *beforeConditionMarker, Expression *exp, M *beforeStatementMarker, Statement *statement,
+                            M *endWhileMarker) {
+        foldScope();
+        AssemblerCoder::getInstance().j(beforeConditionMarker->label);
+        string endLable = CodeBuffer::instance().genLabel();
+        CodeBuffer::instance().bpatch(exp->trueList,beforeStatementMarker->label);
+        CodeBuffer::instance().bpatch(exp->falseList,endLable);
+        CodeBuffer::instance().bpatch(statement->breakList,endLable);
+        CodeBuffer::instance().bpatch(statement->continueList,endWhileMarker->label);
+        delete statement;
+        delete exp;
+        delete beforeConditionMarker;
+        delete beforeStatementMarker;
+        delete endWhileMarker;
 
-        reduceEndScope();
+        return new Statement();
     }
 
     int yyerror(const char * message){
@@ -500,10 +519,13 @@ namespace FanC {
 
     }
 
-    Statement* assembleIf(Expression *exp, M *trueMarker, M *falseMarker, Statement *statement) {
+    Statement* assembleIf(Expression *exp, M *trueMarker,
+            M *falseMarker, Statement *statement) {
         CodeBuffer::instance().bpatch(exp->trueList,trueMarker->label);
         CodeBuffer::instance().bpatch(exp->falseList,falseMarker->label);
         delete exp;
+        delete trueMarker;
+        delete falseMarker;
         statement->falseList.clear();
         statement->trueList.clear();
         return statement;
@@ -517,6 +539,11 @@ namespace FanC {
         CodeBuffer::instance().bpatch(skipElse->nextList,endIfMarker->label);
         CodeBuffer::instance().bpatch(exp->falseList,falseMarker->label);
         delete exp;
+        delete trueMarker;
+        delete falseMarker;
+        delete endIfMarker;
+        delete skipElse;
+
         //union statements (without the back-patched lists)
         Statement* newStatement=new Statement();
         newStatement->continueList= CodeBuffer::instance().merge(trueStatement->continueList,falseStatement->continueList);
@@ -526,17 +553,6 @@ namespace FanC {
         return newStatement;
     }
 
-    Statement* assembleWhile(M *beforeConditionMarker,
-            Expression *exp, M *beforeStatementMarker, Statement *statement,
-                             M *endWhileMarker) {
-        CodeBuffer::instance().bpatch(exp->trueList,beforeStatementMarker->label);
-        CodeBuffer::instance().bpatch(exp->falseList,endWhileMarker->label);
-        CodeBuffer::instance().bpatch(statement->breakList,endWhileMarker->label);
-        CodeBuffer::instance().bpatch(statement->continueList,beforeConditionMarker->label);
-        delete statement;
-        delete exp;
-        return new Statement();
-    }
 
     Statement* assembleStatements(Statements *statements) {
         Statement* statement=new Statement();

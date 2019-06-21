@@ -12,6 +12,7 @@
 #include "registers.hpp"
 #include "bp.hpp"
 #include "assembler_coder.hpp"
+#include <assert.h>     /* assert */
 
 using namespace std;
 using namespace output;
@@ -66,11 +67,12 @@ namespace FanC {
         vector<int> falseList;
         string registerName;
     protected:
-        AssemblerCoder& assembler = AssemblerCoder::getInstance();
-        Registers& registers=Registers::getInstance();
-        CodeBuffer& codeBuffer=CodeBuffer::instance();
+        AssemblerCoder &assembler = AssemblerCoder::getInstance();
+        Registers &registers = Registers::getInstance();
+        CodeBuffer &codeBuffer = CodeBuffer::instance();
     public:
-        Node()=default;
+        Node() = default;
+
         virtual ~Node() = default;
     };
 
@@ -78,16 +80,17 @@ namespace FanC {
     class M : public Node {
     public:
         string label; // the "quad" - label or address in our case it is just a label
-        M():label(""){
+        M() : label("") {
             label = codeBuffer.genLabel();
         }
 
     };
 
-    class N: public Node{
+    class N : public Node {
     public:
         vector<int> nextList;
-        N():nextList(){
+
+        N() : nextList() {
             nextList = codeBuffer.makelist(assembler.j());//to be patched
         }
     };
@@ -114,7 +117,7 @@ namespace FanC {
             return new Type();
         }
 
-        virtual ~Type() =default;
+        virtual ~Type() = default;
     };
 
     class StringType : public Type {
@@ -137,7 +140,7 @@ namespace FanC {
             return new Void();
         }
 
-        virtual ~Void() =default;
+        virtual ~Void() = default;
     };
 
     class ByteType : public Type {
@@ -148,7 +151,7 @@ namespace FanC {
             return new ByteType();
         }
 
-        virtual ~ByteType()=default;
+        virtual ~ByteType() = default;
     };
 
     class IntType : public Type {
@@ -163,7 +166,7 @@ namespace FanC {
             return this->typeName() == other->typeName() || other->typeName() == ByteType().typeName();
         }
 
-        virtual ~IntType() =default;
+        virtual ~IntType() = default;
     };
 
 
@@ -175,31 +178,35 @@ namespace FanC {
             return new BooleanType();
         }
 
-        virtual ~BooleanType() =default;
+        virtual ~BooleanType() = default;
     };
 
 
-    class Statement: public Node{
+    class Statement : public Node {
     public:
         vector<int> continueList;
         vector<int> breakList;
-        Statement():Node(),continueList(),breakList(){
+
+        Statement() : Node(), continueList(), breakList() {
 
         }
 
     };
 
-    class Statements: public Node{
+    class Statements : public Node {
     public:
-        vector<Statement*> statements;
-        explicit Statements(Statement* statement):statements(){
+        vector<Statement *> statements;
+
+        explicit Statements(Statement *statement) : statements() {
             add(statement);
         }
-        Statements* add(Statement* statement){
+
+        Statements *add(Statement *statement) {
             statements.push_back(statement);
             return this;
         }
-        virtual ~Statements(){
+
+        virtual ~Statements() {
             for (vector<Statement *>::iterator it = statements.begin(); it != statements.end(); ++it) {
                 delete *it;
             }
@@ -214,7 +221,7 @@ namespace FanC {
         vector<int> falseList;
         string registerName;
 
-        explicit Expression(ReturnType *_type) : type(_type),trueList(),falseList(),registerName("") {}
+        explicit Expression(ReturnType *_type) : type(_type), trueList(), falseList(), registerName("") {}
 
         virtual Id *isPreconditionable() = 0;
 
@@ -236,7 +243,7 @@ namespace FanC {
 
     class Operation : public Node {
     public:
-        virtual ~Operation() =default;
+        virtual ~Operation() = default;
     };
 
     class BinaryOperation : public Operation {
@@ -245,7 +252,7 @@ namespace FanC {
 
         explicit BinaryOperation(string text) : op(text) {}
 
-        virtual ~BinaryOperation() =default;
+        virtual ~BinaryOperation() = default;
     };
 
     class Relop : public Operation {
@@ -254,9 +261,19 @@ namespace FanC {
 
         explicit Relop(string text) : op(text) {}
 
-        virtual ~Relop() =default;
+        virtual ~Relop() = default;
     };
 
+    class BooleanOperation : public Operation {
+    public:
+        BoolOp op;
+
+        explicit BooleanOperation(BoolOp o) : op(o) {}
+
+        virtual ~BooleanOperation() {
+
+        }
+    };
 
     class BinaryExpression : public Expression {
     public:
@@ -301,13 +318,8 @@ namespace FanC {
                     exit(1);
                 }
             } else if (isInstanceOf<BooleanOperation>(_op)) {
-                if (leftExp->isBoolean() && rightExp->isBoolean()) {
-                    this->type = new BooleanType();
-                    //todo emit branch that match relop
-                } else {
-                    errorMismatch(yylineno);
-                    exit(1);
-                }
+                assert(false);// should go to the second ctor
+
             } else if (isInstanceOf<Multiplicative>(_op) || isInstanceOf<Additive>(_op)) {
                 if (leftExp->isNumric() && rightExp->isNumric()) {
                     this->type = getLargerType();
@@ -334,11 +346,36 @@ namespace FanC {
                 }
 
                 if (this->type->typeName() == ByteType().typeName()) {
-                    assembler.andi(registerName,registerName,255);
+                    assembler.andi(registerName, registerName, 255);
                 }
                 registers.regFree(rightExp->registerName);
             }
 
+
+        }
+
+
+        BinaryExpression(Expression *_leftExp, Expression *_rightExp, BooleanOperation *_op, M *beforeRhsMarker)
+                : Expression(NULL), leftExp(_leftExp), rightExp(_rightExp), op(_op) {
+            if (leftExp->isBoolean() && rightExp->isBoolean()) {
+                this->type = new BooleanType();
+                BoolOp b = _op->op;
+                switch (b) {
+                    case And:
+                        codeBuffer.bpatch(leftExp->trueList,beforeRhsMarker->label);
+                        this->trueList=rightExp->trueList;
+                        this->falseList=codeBuffer.merge(leftExp->falseList,rightExp->falseList);
+                        break;
+                    case Or:
+                        codeBuffer.bpatch(leftExp->falseList,beforeRhsMarker->label);
+                        this->falseList=rightExp->falseList;
+                        this->trueList=codeBuffer.merge(leftExp->trueList,rightExp->trueList);
+                        break;
+                }
+            } else {
+                errorMismatch(yylineno);
+                exit(1);
+            }
 
         }
 
@@ -367,7 +404,7 @@ namespace FanC {
     public:
         explicit UnaryExpression(ReturnType *_type) : Expression(_type) {}
 
-        virtual ~UnaryExpression()=default;
+        virtual ~UnaryExpression() = default;
     };
 
     class Not : public UnaryExpression {
@@ -400,14 +437,14 @@ namespace FanC {
     public:
         explicit Multiplicative(string text) : BinaryOperation(text) {}
 
-        virtual ~Multiplicative() =default;
+        virtual ~Multiplicative() = default;
     };
 
     class Additive : public BinaryOperation {
     public:
         explicit Additive(string text) : BinaryOperation(text) {}
 
-        virtual ~Additive() =default;
+        virtual ~Additive() = default;
     };
 
 
@@ -416,7 +453,7 @@ namespace FanC {
 
         explicit RelationalOperation(string text) : Relop(text) {}
 
-        virtual ~RelationalOperation() =default;
+        virtual ~RelationalOperation() = default;
     };
 
     class EqualityOperation : public Relop {
@@ -424,28 +461,18 @@ namespace FanC {
 
         explicit EqualityOperation(string text) : Relop(text) {}
 
-        virtual ~EqualityOperation() =default;
+        virtual ~EqualityOperation() = default;
     };
 
-    class BooleanOperation : public Operation {
-    public:
-        BoolOp op;
-
-        explicit BooleanOperation(BoolOp o) : op(o) {}
-
-        virtual ~BooleanOperation() {
-
-        }
-    };
 
     class Boolean : public UnaryExpression {
     public:
         bool value;
 
         explicit Boolean(bool val) : UnaryExpression(new BooleanType()), value(val) {
-            if(val){
+            if (val) {
                 trueList = codeBuffer.makelist(assembler.j());
-            }else{
+            } else {
                 falseList = codeBuffer.makelist(assembler.j());
             }
         }
@@ -500,7 +527,7 @@ namespace FanC {
             return idType == FunctionType;
         }
 
-        virtual ~Id()=default;
+        virtual ~Id() = default;
     };
 
 
@@ -508,11 +535,12 @@ namespace FanC {
     public:
         string value;
         string label;
-        explicit String(string text) : UnaryExpression(new StringType()), value(text), label(""){
-            label=CodeBuffer::instance().genLabel();
+
+        explicit String(string text) : UnaryExpression(new StringType()), value(text), label("") {
+            label = CodeBuffer::instance().genLabel();
             assembler.emitStringToData(label, value);
-            registerName =  registers.regAlloc();
-            assembler.la(registerName , label);
+            registerName = registers.regAlloc();
+            assembler.la(registerName, label);
 
         }
 
@@ -521,7 +549,7 @@ namespace FanC {
             return NULL;
         }
 
-        virtual ~String() =default;
+        virtual ~String() = default;
     };
 
     class Number : public UnaryExpression {
@@ -597,7 +625,7 @@ namespace FanC {
     public:
         vector<FormalDec *> decelerations;
 
-        FormalList() =default;
+        FormalList() = default;
 
         explicit FormalList(FormalDec *formalDec) {
 
@@ -612,7 +640,7 @@ namespace FanC {
 
         int size() { return decelerations.size(); }
 
-        virtual ~FormalList()=default;
+        virtual ~FormalList() = default;
     };
 
     class PreCondition : public Node {
@@ -769,23 +797,23 @@ namespace FanC {
             assembler.comment("call to function - saving regs");
             vector<string> used = registers.getUsedRegisters();
             saveAndFreeRegs(used);
-            assembler.subu("$sp","$sp",WORD_SIZE*2);
-            assembler.sw("$fp",WORD_SIZE,"$sp");
-            assembler.sw("$ra",0,"$sp");
+            assembler.subu("$sp", "$sp", WORD_SIZE * 2);
+            assembler.sw("$fp", WORD_SIZE, "$sp");
+            assembler.sw("$ra", 0, "$sp");
             int argsSize = expressions->expressions.size();
-            assembler.subu("$sp","$sp",WORD_SIZE*argsSize);
-            for(int i = 0; i < argsSize; i++){
-                string& reg = expressions->expressions[i]->registerName;
-                assembler.sw(reg,i*WORD_SIZE,"$sp");
+            assembler.subu("$sp", "$sp", WORD_SIZE * argsSize);
+            for (int i = 0; i < argsSize; i++) {
+                string &reg = expressions->expressions[i]->registerName;
+                assembler.sw(reg, i * WORD_SIZE, "$sp");
                 Registers::getInstance().regFree(reg);
             }
-            assembler.comment("jump to function - "+id->name);
+            assembler.comment("jump to function - " + id->name);
             assembler.jal(id->name);
-            assembler.comment("return from functionn  - "+id->name + "restoring the regs");
-            assembler.addu("$sp","$sp",WORD_SIZE*argsSize);
-            assembler.lw("$ra",0,"$sp");
-            assembler.lw("$fp",WORD_SIZE,"$sp");
-            assembler.addu("$sp","$sp",WORD_SIZE*2);
+            assembler.comment("return from functionn  - " + id->name + "restoring the regs");
+            assembler.addu("$sp", "$sp", WORD_SIZE * argsSize);
+            assembler.lw("$ra", 0, "$sp");
+            assembler.lw("$fp", WORD_SIZE, "$sp");
+            assembler.addu("$sp", "$sp", WORD_SIZE * 2);
             restoreRegs(used);
             assembler.comment("end Call");
         }
@@ -813,18 +841,18 @@ namespace FanC {
 
         void restoreRegs(vector<string> &regs) {
             assembler.comment("restore all used regs");
-            for(int i=0;i<regs.size();i++){
-                assembler.lw(regs[i],WORD_SIZE*i,"$sp");
+            for (int i = 0; i < regs.size(); i++) {
+                assembler.lw(regs[i], WORD_SIZE * i, "$sp");
                 registers.markAsUsed(regs[i]);
             }
-            assembler.addu("$sp","$sp",regs.size()*WORD_SIZE);
+            assembler.addu("$sp", "$sp", regs.size() * WORD_SIZE);
         }
 
         void saveAndFreeRegs(vector<string> &regs) {
             assembler.comment("save all used regs");
-            assembler.subu("$sp","$sp",regs.size()*WORD_SIZE);
-            for(int i=0;i<regs.size();i++){
-                assembler.sw(regs[i],WORD_SIZE*i,"$sp");
+            assembler.subu("$sp", "$sp", regs.size() * WORD_SIZE);
+            for (int i = 0; i < regs.size(); i++) {
+                assembler.sw(regs[i], WORD_SIZE * i, "$sp");
                 registers.regFree(regs[i]);
             }
 
@@ -837,7 +865,7 @@ namespace FanC {
         vector<FuncDec *> functions;
         Scope *parent;
 
-        Scope() :variables(),functions(),parent(NULL){
+        Scope() : variables(), functions(), parent(NULL) {
         }
 
         explicit Scope(Scope *_parent) : parent(_parent) {}
@@ -990,9 +1018,9 @@ namespace FanC {
 
     class FunctionScope : public Scope {
     public:
-        FuncDec* func;
+        FuncDec *func;
 
-        explicit FunctionScope(Scope *_parent) : Scope(_parent),func(NULL) {}
+        explicit FunctionScope(Scope *_parent) : Scope(_parent), func(NULL) {}
 
         void updateFunctionScope(FuncDec *_func) {
             func = _func;

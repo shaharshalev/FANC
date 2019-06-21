@@ -13,7 +13,8 @@ namespace FanC {
     void reduceFuncDeclSignature(ReturnType* returnType,Id* id,FormalList* formals);
     void reducePreConditionsDecl(PreConditions* preconditions);
     void reduceStatement();
-    void handleWhile();
+    Statement * handleWhile(M *beforeConditionMarker, Expression *exp, M *beforeStatementMarker, Statement *statement,
+                            M *endWhileMarker);
     void reduceFormalDecl(Type* type,Id* id);
     void reduceOpenWhileScope(Expression *exp);
     void reduceOpenScope();
@@ -87,15 +88,15 @@ namespace FanC {
      * @param trueMarker
      * @param falseMarker
      * @param statement
-     * @return
+     * @return new statement
      */
     Statement* assembleIf(Expression* exp,M* trueMarker,M* falseMarker,Statement* statement);
 
     Statement* assembleIfElse(Expression* exp,M* trueMarker,N* skipElse,M* falseMarker,M* endIfMarker,Statement* trueStatement,Statement* falseStatement);
 
-    Statement *assembleWhile(M *beforeConditionMarker, Expression *exp, M *beforeStatementMarker, Statement *statement,
-                             M *endWhileMarker);
+
 
     Statement* assembleStatements(Statements* statements);
+
 }
 #endif //HW3_MAIN_H
