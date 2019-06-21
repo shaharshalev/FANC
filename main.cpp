@@ -509,8 +509,6 @@ namespace FanC {
     void mergeLists(Statement* dest, Statement* src){
         dest->continueList = CodeBuffer::instance().merge(dest->continueList,src->continueList);
         dest->breakList = CodeBuffer::instance().merge(dest->breakList,src->breakList);
-        dest->falseList = CodeBuffer::instance().merge(dest->falseList,src->falseList);
-        dest->trueList = CodeBuffer::instance().merge(dest->trueList,src->trueList);
     }
 
     void funDecInAssembly(Id* id){
@@ -530,8 +528,6 @@ namespace FanC {
         delete exp;
         delete trueMarker;
         delete falseMarker;
-        statement->falseList.clear();
-        statement->trueList.clear();
         return statement;
 
     }

@@ -12,6 +12,11 @@ public:
         static AssemblerCoder INSTANCE;
         return INSTANCE;
     }
+    static string to_string(int num){
+        stringstream ss;
+        ss<< num;
+        return ss.str();
+    }
 
     void emitStringToData(string label,string str){
          CodeBuffer::instance().emitData(label+" "+".asciiz \""+str+"\"");
@@ -131,6 +136,8 @@ public:
         li("$v0",10);
         CodeBuffer::instance().emit("syscall");
     }
+
+
 
 
 

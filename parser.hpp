@@ -62,18 +62,19 @@ namespace FanC {
     };
 
     class Node {
-    public:
-        vector<int> trueList;
-        vector<int> falseList;
-        string registerName;
     protected:
-        AssemblerCoder &assembler = AssemblerCoder::getInstance();
-        Registers &registers = Registers::getInstance();
-        CodeBuffer &codeBuffer = CodeBuffer::instance();
+        AssemblerCoder &assembler;
+        Registers &registers;
+        CodeBuffer &codeBuffer;
     public:
-        Node() = default;
+        Node():assembler(AssemblerCoder::getInstance())
+        ,registers(Registers::getInstance())
+        ,codeBuffer(CodeBuffer::instance())
+        {
 
-        virtual ~Node() = default;
+        }
+
+        virtual ~Node(){}
     };
 
     //Label Marker- a label creator in some place
@@ -105,7 +106,7 @@ namespace FanC {
             return this->typeName() == other->typeName();
         }
 
-        virtual ~ReturnType() = default;
+        virtual ~ReturnType() {}
 
     };
 
@@ -117,7 +118,7 @@ namespace FanC {
             return new Type();
         }
 
-        virtual ~Type() = default;
+        virtual ~Type() {}
     };
 
     class StringType : public Type {
@@ -128,7 +129,7 @@ namespace FanC {
             return new StringType();
         }
 
-        virtual ~StringType() = default;
+        virtual ~StringType() {}
     };
 
 
@@ -140,7 +141,7 @@ namespace FanC {
             return new Void();
         }
 
-        virtual ~Void() = default;
+        virtual ~Void() {}
     };
 
     class ByteType : public Type {
@@ -151,7 +152,7 @@ namespace FanC {
             return new ByteType();
         }
 
-        virtual ~ByteType() = default;
+        virtual ~ByteType() {}
     };
 
     class IntType : public Type {
@@ -166,7 +167,7 @@ namespace FanC {
             return this->typeName() == other->typeName() || other->typeName() == ByteType().typeName();
         }
 
-        virtual ~IntType() = default;
+        virtual ~IntType() {}
     };
 
 
@@ -178,7 +179,7 @@ namespace FanC {
             return new BooleanType();
         }
 
-        virtual ~BooleanType() = default;
+        virtual ~BooleanType() {}
     };
 
 
@@ -243,7 +244,7 @@ namespace FanC {
 
     class Operation : public Node {
     public:
-        virtual ~Operation() = default;
+        virtual ~Operation() {}
     };
 
     class BinaryOperation : public Operation {
@@ -252,7 +253,7 @@ namespace FanC {
 
         explicit BinaryOperation(string text) : op(text) {}
 
-        virtual ~BinaryOperation() = default;
+        virtual ~BinaryOperation() {}
     };
 
     class Relop : public Operation {
@@ -261,7 +262,7 @@ namespace FanC {
 
         explicit Relop(string text) : op(text) {}
 
-        virtual ~Relop() = default;
+        virtual ~Relop() {}
     };
 
     class BooleanOperation : public Operation {
@@ -404,7 +405,7 @@ namespace FanC {
     public:
         explicit UnaryExpression(ReturnType *_type) : Expression(_type) {}
 
-        virtual ~UnaryExpression() = default;
+        virtual ~UnaryExpression() {}
     };
 
     class Not : public UnaryExpression {
@@ -437,14 +438,14 @@ namespace FanC {
     public:
         explicit Multiplicative(string text) : BinaryOperation(text) {}
 
-        virtual ~Multiplicative() = default;
+        virtual ~Multiplicative() {}
     };
 
     class Additive : public BinaryOperation {
     public:
         explicit Additive(string text) : BinaryOperation(text) {}
 
-        virtual ~Additive() = default;
+        virtual ~Additive() {}
     };
 
 
@@ -453,7 +454,7 @@ namespace FanC {
 
         explicit RelationalOperation(string text) : Relop(text) {}
 
-        virtual ~RelationalOperation() = default;
+        virtual ~RelationalOperation() {}
     };
 
     class EqualityOperation : public Relop {
@@ -461,7 +462,7 @@ namespace FanC {
 
         explicit EqualityOperation(string text) : Relop(text) {}
 
-        virtual ~EqualityOperation() = default;
+        virtual ~EqualityOperation() {}
     };
 
 
@@ -527,7 +528,7 @@ namespace FanC {
             return idType == FunctionType;
         }
 
-        virtual ~Id() = default;
+        virtual ~Id() {}
     };
 
 
@@ -549,7 +550,7 @@ namespace FanC {
             return NULL;
         }
 
-        virtual ~String() = default;
+        virtual ~String() {}
     };
 
     class Number : public UnaryExpression {
@@ -600,7 +601,7 @@ namespace FanC {
 
         }
 
-        virtual  ~Byte() = default;
+        virtual  ~Byte() {}
     };
 
     class FormalDec : public Node {
@@ -625,7 +626,7 @@ namespace FanC {
     public:
         vector<FormalDec *> decelerations;
 
-        FormalList() = default;
+        FormalList() {}
 
         explicit FormalList(FormalDec *formalDec) {
 
@@ -640,7 +641,7 @@ namespace FanC {
 
         int size() { return decelerations.size(); }
 
-        virtual ~FormalList() = default;
+        virtual ~FormalList() {}
     };
 
     class PreCondition : public Node {
@@ -667,7 +668,7 @@ namespace FanC {
     public:
         vector<PreCondition *> preconditions;
 
-        PreConditions() = default;
+        PreConditions() {}
 
         PreConditions *add(PreCondition *precond) {
 
@@ -1013,7 +1014,7 @@ namespace FanC {
     public:
         explicit WhileScope(Scope *_parent) : Scope(_parent) {}
 
-        virtual ~WhileScope() = default;
+        virtual ~WhileScope() {}
     };
 
     class FunctionScope : public Scope {
@@ -1044,7 +1045,7 @@ namespace FanC {
 
         }
 
-        virtual ~FunctionScope() = default;
+        virtual ~FunctionScope() {}
     };
 
 }

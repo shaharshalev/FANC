@@ -13,7 +13,7 @@
 	using namespace FanC;
 %}
 
-%left ASSIGN
+%right ASSIGN
 %token VOID
 %token INT
 %token BYTE
@@ -39,7 +39,7 @@
 %token STRING
 %left OR
 %left AND
-%nonassoc EQUALITY
+%left EQUALITY
 %nonassoc RELATIONAL
 %left ADDITIVE 
 %left MULTIPLICATIVE 
@@ -115,8 +115,8 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement(); $$=assembleSta
 	|	Call SC	{delete $1;$$ = new Statement(); }
 	|	RETURN SC	{validateFunctionReturnType(NULL);jumpToCaller();$$ = new Statement();}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);updateReturnReg((Expression*)$1);jumpToCaller();$$ = new Statement(); }
-	|	IF  OpenIfScope M Statement ELSE N EndScope OpenScope M Statement M {foldScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$6,(M*)$9,(M*)$11,(Statement*)$4,(Statement*)$10); }
-	|	IF  OpenIfScope M Statement M %prec IFPREC {foldScope();$$=assembleIf((Expression*)$2,(M*)$3,(M*)$5,(Statement*)$4); }
+	|	IF  OpenIfScope M Statement M ELSE N EndScope OpenScope M Statement M {foldScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$7,(M*)$10,(M*)$12,(Statement*)$4,(Statement*)$11); }
+	|	IF  OpenIfScope M Statement M %prec IFPREC{foldScope();$$=assembleIf((Expression*)$2,(M*)$3,(M*)$5,(Statement*)$4); }
 	|	WHILE M OpenWhileScope M Statement M {$$ = handleWhile((M*) $2,(Expression*)$3,(M*) $4,(Statement*)$5,(M*)$6);}
 	|	BREAK SC	{validateWhile(Break); $$ = jumpFromBreak();}
 	|	CONTINUE SC	{validateWhile(Continue); $$ = jumpFromContinue();}
@@ -147,7 +147,7 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 	|	FALSE	{$$ = new Boolean(false);/*allocate reg*/}
 	|	NOT Exp	{$$ = new Not((Expression*)$2);}
 	|	Exp AND M Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$4,new BooleanOperation(And),(M*)$3);}
-	|	Exp OR M Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$4,new BooleanOperation(Or),(M*)$3));}
+	|	Exp OR M Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$4,new BooleanOperation(Or),(M*)$3);}
 	|	Exp RELATIONAL Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);/*allocate reg*/}
 	|	Exp EQUALITY Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);/*allocate reg*/}
 ;
@@ -178,10 +178,10 @@ N: /*epsilon*/ {$$ = new N();}
 /* Code Section */
 
 int main(){
-    //yydebug=1 // uncomment this inorder to debug
+    yydebug=1; // uncomment this inorder to debug
     //freopen ("tests/staff/t29.in","r",stdin);
-
-    if(yyparse()!=0)return 1;
+    return yyparse();
+    //if(yyparse()!=0) return 1;
     CodeBuffer::instance().printDataBuffer();
     CodeBuffer::instance().printCodeBuffer();
     return 0;

@@ -11,13 +11,18 @@ class Registers{
 private:
     bool bitmap[NUMBER_OF_REG];
     string names[NUMBER_OF_REG];
+    static string to_string(int num){
+        stringstream ss;
+        ss<< num;
+        return ss.str();
+    }
     Registers():bitmap(),names(){
         for(int i=TEMP_REG_START;i<TEMP_REG_END;i++) {
-            names[i] = "$t" + std::to_string(i);
+            names[i] = "$t" + to_string(i);
             bitmap[i]=false;
         }
         for(int i=STORED_REG_START;i<STORED_REG_END;i++){
-            names[i] = "$s" + std::to_string(i-STORED_REG_START);
+            names[i] = "$s" + to_string(i-STORED_REG_START);
             bitmap[i]=false;
         }
     }
