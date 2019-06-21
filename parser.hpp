@@ -64,13 +64,15 @@ namespace FanC {
     public:
         vector<int> trueList;
         vector<int> falseList;
+        vector<int> continueList;
+        vector<int> breakList;
         string registerName;
     protected:
-        AsssemblerCoder& assembler = AsssemblerCoder::getInstance();
+        AssemblerCoder& assembler = AssemblerCoder::getInstance();
         Registers& registers=Registers::getInstance();
         CodeBuffer& codeBuffer=CodeBuffer::instance();
     public:
-        Node():trueList(),falseList(),registerName(""){
+        Node():trueList(),falseList(),continueList(),breakList(),registerName(""){
 
         }
         virtual ~Node() = default;
@@ -80,7 +82,18 @@ namespace FanC {
     class M : public Node {
     public:
         string label; // the "quad" - label or address in our case it is just a label
+        M():label(""){
+            label = codeBuffer.genLabel();
+        }
 
+    };
+
+    class N: public Node{
+    public:
+        vector<int> nextList;
+        N():nextList(){
+            nextList = codeBuffer.makelist(assembler.j());//to be patched
+        }
     };
 
     class ReturnType : public Node {
@@ -700,10 +713,10 @@ namespace FanC {
                 ++expIt;
                 ++formalIt;
             }
-            if (expIt != expList->expressions.end() || formalIt != arguments->decelerations.end())
-                return false;
+            if (expIt == expList->expressions.end() && formalIt == arguments->decelerations.end())
+                return true;
+            return false;
 
-            return true;
         }
 
 
@@ -909,9 +922,9 @@ namespace FanC {
                     vector<string> *args = fun->getArgsAsString();
                     string func_type = makeFunctionType(fun->returnType->typeName(), *args);
                     delete args;
-                    output::printID((*it)->name, 0, func_type);
+                    //output::printID((*it)->name, 0, func_type);
                 } else {
-                    output::printID((*it)->name, (*it)->offset, (*it)->type->typeName());
+                    //output::printID((*it)->name, (*it)->offset, (*it)->type->typeName());
                 }
             }
         }
@@ -919,7 +932,7 @@ namespace FanC {
 
         virtual void endScope() {
 
-            output::endScope();
+            //output::endScope();
             printIds();
 
 
@@ -949,7 +962,7 @@ namespace FanC {
 
     class FunctionScope : public Scope {
     public:
-        FuncDec *func;
+        FuncDec* func;
 
         explicit FunctionScope(Scope *_parent) : Scope(_parent),func(NULL) {}
 
@@ -969,8 +982,8 @@ namespace FanC {
 
         void endScope() {
 
-            output::endScope();
-            output::printPreconditions(func->id->name, func->conditions->size());
+            //output::endScope();
+            //output::printPreconditions(func->id->name, func->conditions->size());
             printIds();
 
         }

@@ -3,9 +3,13 @@
 #include "parser.hpp"
 #include "output.hpp"
 #include <assert.h>     /* assert */
+
+#define PRINT_LABEL "print"
+#define PRINTI_LABEL "printi"
+
 namespace FanC {
     void reduceProgram();
-    void reduceFuncDecl();
+    void reduceFuncDecl(Id* id);
     void reduceFuncDeclSignature(ReturnType* returnType,Id* id,FormalList* formals);
     void reducePreConditionsDecl(PreConditions* preconditions);
     void reduceStatement();
@@ -67,6 +71,14 @@ namespace FanC {
     void jumpToCaller();
 
     void updateReturnReg(Expression* exp);
+
+    void jumpFromBreak(Node* node);
+
+    void jumpFromContinue(Node* node);
+
+    void mergeLists(Node* destNode, Node* srcNode);
+
+    void funDecInAssembly(Id* id);
 
 
 }

@@ -59,7 +59,7 @@ Funcs: /*epsilon*/ {}
 	| FuncDecl Funcs	{} 
 ;
 
-FuncDecl:	FuncDeclSignature PreConditionsDecl LBRACE  Statements RBRACE {reduceFuncDecl();}
+FuncDecl:	FuncDeclSignature PreConditionsDecl LBRACE  Statements RBRACE {reduceFuncDecl((Id*)$1);}
 ;
 
 FuncDeclSignature:OpenFunctionScope RetType ID LPAREN Formals RPAREN  {
@@ -67,6 +67,8 @@ FuncDeclSignature:OpenFunctionScope RetType ID LPAREN Formals RPAREN  {
      Id* id=dynamic_cast<Id*>($3);
      FormalList* formals=dynamic_cast<FormalList*>($5);
      reduceFuncDeclSignature(returnType,id,formals);
+     funDecInAssembly((Id*)$3);
+     $$ = $3;
 }
 ;
 
@@ -102,8 +104,8 @@ PreConditions:	/*epsilon*/ {$$=new PreConditions();}
 PreCondition:	PRECOND LPAREN Exp RPAREN {validateExpIsBool((Expression*)$3); $$=new PreCondition((Expression*)$3);}
 ;
 
-Statements: Statement	{}
-	|	Statements Statement {}
+Statements: Statement	{$$=$1;}
+	|	Statements Statement {mergeLists((Node*)$$,(Node*)$2);}
 ;
 
 Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();}
@@ -112,12 +114,12 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();}
 	|	ID ASSIGN Exp SC	{assignToVar((Id*)$1,(Expression*)$3);}
 	|	Call SC	{delete $1; }
 	|	RETURN SC	{validateFunctionReturnType(NULL);jumpToCaller();}
-	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);updateReturnReg((Expression*)$1);jumpToCaller(); /* todo move reg to v0 and check if bool*/}
-	|	IF  OpenIfScope Statement ELSE EndScope OpenScope Statement 	{reduceEndScope();}
-	|	IF  OpenIfScope Statement %prec IFPREC {reduceEndScope();}
-	|	WHILE  OpenWhileScope Statement	{handleWhile();}
-	|	BREAK SC	{validateWhile(Break);}
-	|	CONTINUE SC	{validateWhile(Continue);}
+	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);updateReturnReg((Expression*)$1);jumpToCaller(); }
+	|	IF  OpenIfScope M Statement ELSE N EndScope OpenScope M Statement M {reduceEndScope();/*todo handle backPatching with N and M's*/ }
+	|	IF  OpenIfScope M Statement %prec IFPREC {reduceEndScope(); /*todo handle backPatching with N and M's*/}
+	|	WHILE M OpenWhileScope Statement M	{handleWhile();}
+	|	BREAK SC	{validateWhile(Break);jumpFromBreak((Node*)$$);}
+	|	CONTINUE SC	{validateWhile(Continue); jumpFromContinue((Node*)$$);}
 ;
 
 Call:	ID LPAREN ExpList RPAREN	{$$=handleCall((Id*)$1,(ExpressionList*)$3);}
@@ -150,13 +152,13 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 	|	Exp EQUALITY Exp {$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(Relop*)$2);/*allocate reg*/}
 ;
 
-OpenWhileScope: LPAREN Exp RPAREN {reduceOpenWhileScope((Expression*)$2);}
+OpenWhileScope: LPAREN Exp RPAREN {reduceOpenWhileScope((Expression*)$2); $$=$2;}
 ;
 
 OpenScope: /*epsilon*/ {reduceOpenScope();}
 ;
 
-OpenIfScope: LPAREN Exp RPAREN  {reduceOpenIfScope((Expression*)$2);}
+OpenIfScope: LPAREN Exp RPAREN  {reduceOpenIfScope((Expression*)$2); $$ = $2;}
 ;
 
 OpenFunctionScope: /*epsilon*/ {reduceOpenFunctionScope();}
@@ -165,6 +167,11 @@ OpenFunctionScope: /*epsilon*/ {reduceOpenFunctionScope();}
 EndScope: /*epsilon*/ {reduceEndScope();}
 ;
 
+M: /*epsilon*/ {$$ = new M();}
+;
+
+N: /*epsilon*/ {$$ = new N();}
+;
 
 %%
 
@@ -173,7 +180,11 @@ EndScope: /*epsilon*/ {reduceEndScope();}
 int main(){
     //yydebug=1 // uncomment this inorder to debug
     //freopen ("tests/staff/t29.in","r",stdin);
-    return yyparse();
+
+    if(yyparse()!=0)return 1;
+    CodeBuffer::instance().printDataBuffer();
+    CodeBuffer::instance().printCodeBuffer();
+    return 0;
 }
 
 

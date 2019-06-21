@@ -6,11 +6,10 @@
 using namespace std;
 #define WORD_SIZE 4
 #define DIV_BY_ZERO_LABEL "div_by_zero_error"
-#define PRINT_LABEL "print"
-class AsssemblerCoder{
+class AssemblerCoder{
 public:
-    static AsssemblerCoder& getInstance(){
-        static AsssemblerCoder INSTANCE;
+    static AssemblerCoder& getInstance(){
+        static AssemblerCoder INSTANCE;
         return INSTANCE;
     }
 
@@ -122,6 +121,15 @@ public:
 
     void comment(string str){
         CodeBuffer::instance().emit("#"+str);
+    }
+
+    void addLable(string label){
+        CodeBuffer::instance().emit(label+":");
+    }
+
+    void exit(){
+        li("$v0",10);
+        CodeBuffer::instance().emit("syscall");
     }
 
 

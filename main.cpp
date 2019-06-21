@@ -189,15 +189,15 @@ namespace FanC {
         id->type= idFromSymbolTable->type->clone();
         id->offset = idFromSymbolTable->offset;
         if(id->isBoolean()){
-            int bneAdd = AsssemblerCoder::getInstance().bne("$0",id->registerName);
+            int bneAdd = AssemblerCoder::getInstance().bne("$0",id->registerName);
             id->trueList = CodeBuffer::instance().makelist(bneAdd);
-            id->falseList = CodeBuffer::instance().makelist(AsssemblerCoder::getInstance().j());
+            id->falseList = CodeBuffer::instance().makelist(AssemblerCoder::getInstance().j());
         }
     }
 
     void saveRegisterToStack(Id *id, Expression *exp) {
         changeBranchToVar(exp);//must be before saving to stack
-        AsssemblerCoder::getInstance().sw(exp->registerName,id->offset*(-WORD_SIZE),"$fp");
+        AssemblerCoder::getInstance().sw(exp->registerName,id->offset*(-WORD_SIZE),"$fp");
         Registers::getInstance().regFree(exp->registerName);
     }
 
@@ -246,9 +246,12 @@ namespace FanC {
         return a.id != b.id;
     }
 
-    void reduceFuncDecl() {
-
+    void reduceFuncDecl(Id* id) {
         reduceEndScope();
+        AssemblerCoder &assembler = AssemblerCoder::getInstance();
+        assembler.addu("$sp","$fp",WORD_SIZE);
+        if(id->name == "main") assembler.exit();
+        else assembler.jr();
     }
 
     void reduceFuncDeclSignature(ReturnType *returnType, Id *id, FormalList *formals) {
@@ -361,41 +364,43 @@ namespace FanC {
         string regName = Registers::getInstance().regAlloc();
         /* the loading from frame pointer will work only if there will
          * since there are no global variables */
-        AsssemblerCoder::getInstance().lw(regName,id->offset*-4);
+        AssemblerCoder::getInstance().lw(regName,id->offset*-4);
         return regName;
     }
 
     void divZeroBody(){
         string errorDivZeroLabel="error_div_zero";
-        AsssemblerCoder::getInstance().emitStringToData(errorDivZeroLabel+":","Error division by zero\\n");
+        AssemblerCoder::getInstance().emitStringToData(errorDivZeroLabel+":","Error division by zero\\n");
 
-        CodeBuffer::instance().emit((string)DIV_BY_ZERO_LABEL+":");
+        AssemblerCoder::getInstance().addLable(DIV_BY_ZERO_LABEL);
         string regName = Registers::getInstance().regAlloc();
-        AsssemblerCoder::getInstance().la(regName,errorDivZeroLabel);
+        AssemblerCoder::getInstance().la(regName,errorDivZeroLabel);
         /*prepering stack for function print*/
-        AsssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE*3); //make space for 3 reg alloc
-        AsssemblerCoder::getInstance().sw("$fp",2*WORD_SIZE,"$sp");
-        AsssemblerCoder::getInstance().sw("$ra",WORD_SIZE,"$sp");
-        AsssemblerCoder::getInstance().sw(regName,0,"$sp");
-        AsssemblerCoder::getInstance().subu("$fp","$sp",WORD_SIZE);
+        AssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE*3); //make space for 3 reg alloc
+        AssemblerCoder::getInstance().sw("$fp",2*WORD_SIZE,"$sp");
+        AssemblerCoder::getInstance().sw("$ra",WORD_SIZE,"$sp");
+        AssemblerCoder::getInstance().sw(regName,0,"$sp");
+        AssemblerCoder::getInstance().subu("$fp","$sp",WORD_SIZE);
         /*jumping to print function*/
         Registers::getInstance().regFree(regName);
-        AsssemblerCoder::getInstance().jal(PRINT_LABEL);
+        AssemblerCoder::getInstance().jal(PRINT_LABEL);
         /*restore the reg from stack */
-        AsssemblerCoder::getInstance().lw("$ra",WORD_SIZE,"$sp");
-        AsssemblerCoder::getInstance().lw("$fp",2*WORD_SIZE,"$sp");
-        AsssemblerCoder::getInstance().addu("$sp","$sp",WORD_SIZE*3);
-        AsssemblerCoder::getInstance().exitSyscall();
+        AssemblerCoder::getInstance().lw("$ra",WORD_SIZE,"$sp");
+        AssemblerCoder::getInstance().lw("$fp",2*WORD_SIZE,"$sp");
+        AssemblerCoder::getInstance().addu("$sp","$sp",WORD_SIZE*3);
+        AssemblerCoder::getInstance().exitSyscall();
     }
 
     void printBody(){
-        AsssemblerCoder::getInstance().printSyscall(WORD_SIZE);
-        AsssemblerCoder::getInstance().jr();
+        AssemblerCoder::getInstance().addLable(PRINT_LABEL);
+        AssemblerCoder::getInstance().printSyscall(WORD_SIZE);
+        AssemblerCoder::getInstance().jr();
     }
 
     void printiBody(){
-        AsssemblerCoder::getInstance().printiSyscall(WORD_SIZE);
-        AsssemblerCoder::getInstance().jr();
+        AssemblerCoder::getInstance().addLable(PRINTI_LABEL);
+        AssemblerCoder::getInstance().printiSyscall(WORD_SIZE);
+        AssemblerCoder::getInstance().jr();
     }
 
     void initProgramHeader() {
@@ -403,31 +408,32 @@ namespace FanC {
         divZeroBody();
         printBody();
         printiBody();
+        AssemblerCoder::getInstance().j("main");
 
     }
 
     void saveReturnValueInCallRegister(Call *call) {
         call->registerName=Registers::getInstance().regAlloc();
-        AsssemblerCoder::getInstance().move(call->registerName,"$v0");
+        AssemblerCoder::getInstance().move(call->registerName,"$v0");
     }
 
     void handleRegisterInAssignmentDecl(Expression *exp) {
         changeBranchToVar(exp);//must be first
-        AsssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE);
-        AsssemblerCoder::getInstance().sw(exp->registerName,0,"$sp");
+        AssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE);
+        AssemblerCoder::getInstance().sw(exp->registerName,0,"$sp");
         Registers::getInstance().regFree(exp->registerName);
     }
 
     void initVariableInStack() {
-        AsssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE);
-        AsssemblerCoder::getInstance().sw("$0",0,"$sp");
+        AssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE);
+        AssemblerCoder::getInstance().sw("$0",0,"$sp");
     }
 
     void changeBranchToVar(Expression *exp) {
         if(!exp->isBoolean()) return;
         string reg=Registers::getInstance().regAlloc();
         string trueLabel=CodeBuffer::instance().genLabel();
-        AsssemblerCoder& assembler=AsssemblerCoder::getInstance().getInstance();
+        AssemblerCoder& assembler=AssemblerCoder::getInstance();
         assembler.li(reg,1);
         vector<int> end=CodeBuffer::makelist(assembler.j());
 
@@ -442,18 +448,47 @@ namespace FanC {
     }
 
     void jumpToCaller() {
-        AsssemblerCoder& assembler=AsssemblerCoder::getInstance().getInstance();
+        AssemblerCoder& assembler=AssemblerCoder::getInstance();
         assembler.comment("return from function");
         assembler.jr();
     }
 
     void updateReturnReg(Expression *exp) {
-        AsssemblerCoder& assembler=AsssemblerCoder::getInstance().getInstance();
+        AssemblerCoder& assembler=AssemblerCoder::getInstance();
         assembler.move("$v0",exp->registerName);
         Registers::getInstance().regFree(exp->registerName);
     }
 
+    void jumpFromBreak(Node *node) {
+        AssemblerCoder::getInstance().comment("jump on break");
+        int jumpAdd=AssemblerCoder::getInstance().j();
+        node->breakList=CodeBuffer::makelist(jumpAdd);
+    }
 
+    void jumpFromContinue(Node *node) {
+        AssemblerCoder::getInstance().comment("jump on continue");
+        int jumpAdd=AssemblerCoder::getInstance().j();
+        node->continueList=CodeBuffer::instance().makelist(jumpAdd);
+
+
+    }
+
+    void mergeLists(Node* destNode, Node* srcNode){
+        destNode->continueList = CodeBuffer::instance().merge(destNode->continueList,srcNode->continueList);
+        destNode->breakList = CodeBuffer::instance().merge(destNode->breakList,srcNode->breakList);
+        destNode->falseList = CodeBuffer::instance().merge(destNode->falseList,srcNode->falseList);
+        destNode->trueList = CodeBuffer::instance().merge(destNode->trueList,srcNode->trueList);
+    }
+
+    void funDecInAssembly(Id* id){
+        AssemblerCoder& assembler=AssemblerCoder::getInstance();
+        if(id->name == "main"){
+            assembler.move("$fp","$sp");
+            assembler.addu("$sp","$sp",WORD_SIZE);
+        }
+        assembler.addLable(id->name);
+
+    }
 
 
 }
