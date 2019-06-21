@@ -64,16 +64,13 @@ namespace FanC {
     public:
         vector<int> trueList;
         vector<int> falseList;
-
         string registerName;
     protected:
         AssemblerCoder& assembler = AssemblerCoder::getInstance();
         Registers& registers=Registers::getInstance();
         CodeBuffer& codeBuffer=CodeBuffer::instance();
     public:
-        Node():trueList(),falseList(),registerName(""){
-
-        }
+        Node()=default;
         virtual ~Node() = default;
     };
 
@@ -195,14 +192,29 @@ namespace FanC {
     class Statements: public Node{
     public:
         vector<Statement*> statements;
+        explicit Statements(Statement* statement):statements(){
+            add(statement);
+        }
+        Statements* add(Statement* statement){
+            statements.push_back(statement);
+            return this;
+        }
+        virtual ~Statements(){
+            for (vector<Statement *>::iterator it = statements.begin(); it != statements.end(); ++it) {
+                delete *it;
+            }
+        }
     };
 
 
     class Expression : public Node {
     public:
         ReturnType *type;
+        vector<int> trueList;
+        vector<int> falseList;
+        string registerName;
 
-        explicit Expression(ReturnType *_type) : type(_type) {}
+        explicit Expression(ReturnType *_type) : type(_type),trueList(),falseList(),registerName("") {}
 
         virtual Id *isPreconditionable() = 0;
 

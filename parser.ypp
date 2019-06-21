@@ -59,7 +59,7 @@ Funcs: /*epsilon*/ {}
 	| FuncDecl Funcs	{} 
 ;
 
-FuncDecl:	FuncDeclSignature PreConditionsDecl LBRACE  Statements RBRACE {reduceFuncDecl((Id*)$1);}
+FuncDecl:	FuncDeclSignature PreConditionsDecl LBRACE  Statements RBRACE {reduceFuncDecl((Id*)$1,(Statements*)$4);}
 ;
 
 FuncDeclSignature:OpenFunctionScope RetType ID LPAREN Formals RPAREN  {
@@ -104,20 +104,20 @@ PreConditions:	/*epsilon*/ {$$=new PreConditions();}
 PreCondition:	PRECOND LPAREN Exp RPAREN {validateExpIsBool((Expression*)$3); $$=new PreCondition((Expression*)$3);}
 ;
 
-Statements: Statement	{$$=$1;}
-	|	Statements Statement {mergeLists((Statement*)$$,(Statement*)$2);}
+Statements: Statement	{$$=new Statements((Statement*)$1);}
+	|	Statements Statement {$$=((Statements*)$1)->add((Statement*)$2);}
 ;
 
-Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement();/* TODO union all statments to one statment*/}
+Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement(); $$=assembleStatements((Statements*)$3);}
 	|	Type ID	SC	{handleTypeDecl((Type*)$1,(Id*)$2);initVariableInStack();$$ = new Statement();}
 	|	Type ID ASSIGN Exp SC	{handleTypeDecl((Type*)$1,(Id*)$2);validateAssignment((Id*)$2,(Expression*)$4);handleRegisterInAssignmentDecl((Expression*)$4);$$ = new Statement();}
 	|	ID ASSIGN Exp SC	{assignToVar((Id*)$1,(Expression*)$3);$$ = new Statement();}
 	|	Call SC	{delete $1;$$ = new Statement(); }
 	|	RETURN SC	{validateFunctionReturnType(NULL);jumpToCaller();$$ = new Statement();}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);updateReturnReg((Expression*)$1);jumpToCaller();$$ = new Statement(); }
-	|	IF  OpenIfScope M Statement ELSE N EndScope OpenScope M Statement M {reduceEndScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$5,(M*)$9,(M*)$11,(Statement*)$4,(Statement*)$10)); }
+	|	IF  OpenIfScope M Statement ELSE N EndScope OpenScope M Statement M {reduceEndScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$5,(M*)$9,(M*)$11,(Statement*)$4,(Statement*)$10); }
 	|	IF  OpenIfScope M Statement M %prec IFPREC {reduceEndScope();$$=assembleIf((Expression*)$2,(M*)$3,(M*)$5,(Statement*)$4); }
-	|	WHILE M OpenWhileScope Statement M	{handleWhile();$$ = new Statement();/*todo continue and break backpatching*/}
+	|	WHILE M OpenWhileScope M Statement M	{handleWhile();$$ = assembleWhile((M*) $2,(Expression*)$3,(M*) $4,(Statement*)$5,(M*)$6);}
 	|	BREAK SC	{validateWhile(Break); $$ = jumpFromBreak();}
 	|	CONTINUE SC	{validateWhile(Continue); $$ = jumpFromContinue();}
 ;

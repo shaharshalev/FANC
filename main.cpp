@@ -246,12 +246,13 @@ namespace FanC {
         return a.id != b.id;
     }
 
-    void reduceFuncDecl(Id* id) {
+    void reduceFuncDecl(Id *id, Statements *statements) {
         reduceEndScope();
         AssemblerCoder &assembler = AssemblerCoder::getInstance();
         assembler.addu("$sp","$fp",WORD_SIZE);
         if(id->name == "main") assembler.exit();
         else assembler.jr();
+        delete statements;
     }
 
     void reduceFuncDeclSignature(ReturnType *returnType, Id *id, FormalList *formals) {
@@ -523,6 +524,27 @@ namespace FanC {
         delete trueStatement;
         delete falseStatement;
         return newStatement;
+    }
+
+    Statement* assembleWhile(M *beforeConditionMarker,
+            Expression *exp, M *beforeStatementMarker, Statement *statement,
+                             M *endWhileMarker) {
+        CodeBuffer::instance().bpatch(exp->trueList,beforeStatementMarker->label);
+        CodeBuffer::instance().bpatch(exp->falseList,endWhileMarker->label);
+        CodeBuffer::instance().bpatch(statement->breakList,endWhileMarker->label);
+        CodeBuffer::instance().bpatch(statement->continueList,beforeConditionMarker->label);
+        delete statement;
+        delete exp;
+        return new Statement();
+    }
+
+    Statement* assembleStatements(Statements *statements) {
+        Statement* statement=new Statement();
+        for(int i=0;i<statements->statements.size();i++){
+            mergeLists(statement,statements->statements[i]);
+        }
+        delete statements;
+        return statement;
     }
 
 

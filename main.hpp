@@ -9,7 +9,7 @@
 
 namespace FanC {
     void reduceProgram();
-    void reduceFuncDecl(Id* id);
+    void reduceFuncDecl(Id *id, Statements *statements);
     void reduceFuncDeclSignature(ReturnType* returnType,Id* id,FormalList* formals);
     void reducePreConditionsDecl(PreConditions* preconditions);
     void reduceStatement();
@@ -76,7 +76,7 @@ namespace FanC {
     Statement* jumpFromContinue();
 
 
-    void mergeLists(Node* destNode, Node* srcNode);
+    void mergeLists(Statement* dest, Statement* src);
 
     void funDecInAssembly(Id* id);
 
@@ -93,5 +93,9 @@ namespace FanC {
 
     Statement* assembleIfElse(Expression* exp,M* trueMarker,N* skipElse,M* falseMarker,M* endIfMarker,Statement* trueStatement,Statement* falseStatement);
 
+    Statement *assembleWhile(M *beforeConditionMarker, Expression *exp, M *beforeStatementMarker, Statement *statement,
+                             M *endWhileMarker);
+
+    Statement* assembleStatements(Statements* statements);
 }
 #endif //HW3_MAIN_H
