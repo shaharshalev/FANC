@@ -11,10 +11,6 @@ namespace FanC {
     vector<Scope *> symbolTable;
     vector<int> offsets;
     bool isMainExist = false;
-    void foldScope();
-
-
-
 
     void checkAndNotifyIfMain(Id *id, FormalList *formals, ReturnType *returnType) {
 
@@ -433,7 +429,6 @@ namespace FanC {
         divZeroBody();
         printBody();
         printiBody();
-        AssemblerCoder::getInstance().j("main");
 
     }
 
@@ -488,9 +483,18 @@ namespace FanC {
 
     Statement* jumpFromBreak() {
         Statement *statement=new Statement();
+        //folding stack
+        int numVarsBefore=offsets.back();
+        offsets.pop_back();
+        int numVars= numVarsBefore-offsets.back();
+        offsets.push_back(numVarsBefore); //restoring the offset
+        AssemblerCoder::getInstance().comment("return sp to the start of this scope");
+        AssemblerCoder::getInstance().addu("$sp","$sp",WORD_SIZE*numVars);
+        //jump to be patched
         AssemblerCoder::getInstance().comment("jump on break");
         int jumpAdd=AssemblerCoder::getInstance().j();
         statement->breakList=CodeBuffer::makelist(jumpAdd);
+
         return statement;
     }
 

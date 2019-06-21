@@ -72,7 +72,7 @@ FuncDeclSignature:OpenFunctionScope RetType ID LPAREN Formals RPAREN  {
 }
 ;
 
-PreConditionsDecl: PreConditions {
+PreConditionsDecl: PreConditions { /* TODO: */
      PreConditions* preconditions=dynamic_cast<PreConditions*>($1);
      reducePreConditionsDecl(preconditions);
 };
@@ -115,7 +115,7 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement(); $$=assembleSta
 	|	Call SC	{delete $1;$$ = new Statement(); }
 	|	RETURN SC	{validateFunctionReturnType(NULL);jumpToCaller();$$ = new Statement();}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);updateReturnReg((Expression*)$1);jumpToCaller();$$ = new Statement(); }
-	|	IF  OpenIfScope M Statement ELSE N EndScope OpenScope M Statement M {foldScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$5,(M*)$9,(M*)$11,(Statement*)$4,(Statement*)$10); }
+	|	IF  OpenIfScope M Statement ELSE N EndScope OpenScope M Statement M {foldScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$6,(M*)$9,(M*)$11,(Statement*)$4,(Statement*)$10); }
 	|	IF  OpenIfScope M Statement M %prec IFPREC {foldScope();$$=assembleIf((Expression*)$2,(M*)$3,(M*)$5,(Statement*)$4); }
 	|	WHILE M OpenWhileScope M Statement M {$$ = handleWhile((M*) $2,(Expression*)$3,(M*) $4,(Statement*)$5,(M*)$6);}
 	|	BREAK SC	{validateWhile(Break); $$ = jumpFromBreak();}

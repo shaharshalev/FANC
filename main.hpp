@@ -94,7 +94,7 @@ namespace FanC {
 
     Statement* assembleIfElse(Expression* exp,M* trueMarker,N* skipElse,M* falseMarker,M* endIfMarker,Statement* trueStatement,Statement* falseStatement);
 
-
+    void foldScope();
 
     Statement* assembleStatements(Statements* statements);
 
