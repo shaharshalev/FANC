@@ -64,15 +64,14 @@ namespace FanC {
     public:
         vector<int> trueList;
         vector<int> falseList;
-        vector<int> continueList;
-        vector<int> breakList;
+
         string registerName;
     protected:
         AssemblerCoder& assembler = AssemblerCoder::getInstance();
         Registers& registers=Registers::getInstance();
         CodeBuffer& codeBuffer=CodeBuffer::instance();
     public:
-        Node():trueList(),falseList(),continueList(),breakList(),registerName(""){
+        Node():trueList(),falseList(),registerName(""){
 
         }
         virtual ~Node() = default;
@@ -181,6 +180,23 @@ namespace FanC {
 
         virtual ~BooleanType() =default;
     };
+
+
+    class Statement: public Node{
+    public:
+        vector<int> continueList;
+        vector<int> breakList;
+        Statement():Node(),continueList(),breakList(){
+
+        }
+
+    };
+
+    class Statements: public Node{
+    public:
+        vector<Statement*> statements;
+    };
+
 
     class Expression : public Node {
     public:

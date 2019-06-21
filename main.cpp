@@ -222,7 +222,7 @@ namespace FanC {
         symbolTable.push_back(new Scope(symbolTable.back()));
         offsets.push_back(offsets.back());
         validateExpIsBool(exp);
-        delete exp;
+        //delete exp;
     }
 
 
@@ -317,18 +317,23 @@ namespace FanC {
         offsets.push_back(offsets.back());
     }
 
-    void reduceEndScope() {
+    int reduceEndScope() {
 
         Scope *currentScope = symbolTable.back();
         symbolTable.pop_back();
+        int numVarsBefore = offsets.back();
         offsets.pop_back();
+        int numVarsAfter = offsets.back();
         currentScope->endScope();
         delete currentScope;
+        return numVarsBefore - numVarsAfter;
     }
 
     void reduceStatement() {
+        int numVars = reduceEndScope();
+        AssemblerCoder::getInstance().comment("return sp to the start of this scope");
+        AssemblerCoder::getInstance().addu("$sp","$sp",WORD_SIZE*numVars);
 
-        reduceEndScope();
     }
 
 
@@ -431,9 +436,10 @@ namespace FanC {
 
     void changeBranchToVar(Expression *exp) {
         if(!exp->isBoolean()) return;
+        AssemblerCoder& assembler=AssemblerCoder::getInstance();
+        assembler.comment("changing branch to var");
         string reg=Registers::getInstance().regAlloc();
         string trueLabel=CodeBuffer::instance().genLabel();
-        AssemblerCoder& assembler=AssemblerCoder::getInstance();
         assembler.li(reg,1);
         vector<int> end=CodeBuffer::makelist(assembler.j());
 
@@ -454,30 +460,33 @@ namespace FanC {
     }
 
     void updateReturnReg(Expression *exp) {
+        changeBranchToVar(exp); //must be first in case of boolean exp is returned
         AssemblerCoder& assembler=AssemblerCoder::getInstance();
         assembler.move("$v0",exp->registerName);
         Registers::getInstance().regFree(exp->registerName);
     }
 
-    void jumpFromBreak(Node *node) {
+    Statement* jumpFromBreak() {
+        Statement *statement=new Statement();
         AssemblerCoder::getInstance().comment("jump on break");
         int jumpAdd=AssemblerCoder::getInstance().j();
-        node->breakList=CodeBuffer::makelist(jumpAdd);
+        statement->breakList=CodeBuffer::makelist(jumpAdd);
+        return statement;
     }
 
-    void jumpFromContinue(Node *node) {
+    Statement* jumpFromContinue() {
+        Statement *statement=new Statement();
         AssemblerCoder::getInstance().comment("jump on continue");
         int jumpAdd=AssemblerCoder::getInstance().j();
-        node->continueList=CodeBuffer::instance().makelist(jumpAdd);
-
-
+        statement->continueList=CodeBuffer::instance().makelist(jumpAdd);
+        return statement;
     }
 
-    void mergeLists(Node* destNode, Node* srcNode){
-        destNode->continueList = CodeBuffer::instance().merge(destNode->continueList,srcNode->continueList);
-        destNode->breakList = CodeBuffer::instance().merge(destNode->breakList,srcNode->breakList);
-        destNode->falseList = CodeBuffer::instance().merge(destNode->falseList,srcNode->falseList);
-        destNode->trueList = CodeBuffer::instance().merge(destNode->trueList,srcNode->trueList);
+    void mergeLists(Statement* dest, Statement* src){
+        dest->continueList = CodeBuffer::instance().merge(dest->continueList,src->continueList);
+        dest->breakList = CodeBuffer::instance().merge(dest->breakList,src->breakList);
+        dest->falseList = CodeBuffer::instance().merge(dest->falseList,src->falseList);
+        dest->trueList = CodeBuffer::instance().merge(dest->trueList,src->trueList);
     }
 
     void funDecInAssembly(Id* id){
@@ -488,6 +497,32 @@ namespace FanC {
         }
         assembler.addLable(id->name);
 
+    }
+
+    Statement* assembleIf(Expression *exp, M *trueMarker, M *falseMarker, Statement *statement) {
+        CodeBuffer::instance().bpatch(exp->trueList,trueMarker->label);
+        CodeBuffer::instance().bpatch(exp->falseList,falseMarker->label);
+        delete exp;
+        statement->falseList.clear();
+        statement->trueList.clear();
+        return statement;
+
+    }
+
+    Statement *assembleIfElse(Expression *exp, M *trueMarker, N *skipElse,
+            M *falseMarker, M *endIfMarker,Statement *trueStatement,
+            Statement *falseStatement) {
+        CodeBuffer::instance().bpatch(exp->trueList,trueMarker->label);
+        CodeBuffer::instance().bpatch(skipElse->nextList,endIfMarker->label);
+        CodeBuffer::instance().bpatch(exp->falseList,falseMarker->label);
+        delete exp;
+        //union statements (without the back-patched lists)
+        Statement* newStatement=new Statement();
+        newStatement->continueList= CodeBuffer::instance().merge(trueStatement->continueList,falseStatement->continueList);
+        newStatement->breakList=CodeBuffer::instance().merge(trueStatement->breakList,falseStatement->breakList);
+        delete trueStatement;
+        delete falseStatement;
+        return newStatement;
     }
 
 

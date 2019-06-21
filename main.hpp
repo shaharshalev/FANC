@@ -18,7 +18,7 @@ namespace FanC {
     void reduceOpenWhileScope(Expression *exp);
     void reduceOpenScope();
     void reduceOpenFunctionScope();
-    void reduceEndScope();
+    int reduceEndScope();
     FormalList* reduceFormalsList(FormalList* formalList,FormalDec* formalDec);
     PreConditions *reducePreConditions(PreConditions *preConditions,PreCondition* precondition);
 
@@ -72,14 +72,26 @@ namespace FanC {
 
     void updateReturnReg(Expression* exp);
 
-    void jumpFromBreak(Node* node);
+    Statement* jumpFromBreak();
+    Statement* jumpFromContinue();
 
-    void jumpFromContinue(Node* node);
 
     void mergeLists(Node* destNode, Node* srcNode);
 
     void funDecInAssembly(Id* id);
 
+    /**
+     * the function assemble new statement with the continueList and breakList of the [statement]
+     * and backpatch the trueList with trueMarker, and falseList with falseMarker
+     * @param exp
+     * @param trueMarker
+     * @param falseMarker
+     * @param statement
+     * @return
+     */
+    Statement* assembleIf(Expression* exp,M* trueMarker,M* falseMarker,Statement* statement);
+
+    Statement* assembleIfElse(Expression* exp,M* trueMarker,N* skipElse,M* falseMarker,M* endIfMarker,Statement* trueStatement,Statement* falseStatement);
 
 }
 #endif //HW3_MAIN_H
