@@ -115,8 +115,8 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement(); $$=assembleSta
 	|	Call SC	{delete $1;$$ = new Statement(); }
 	|	RETURN SC	{validateFunctionReturnType(NULL);jumpToCaller();$$ = new Statement();}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);updateReturnReg((Expression*)$1);jumpToCaller();$$ = new Statement(); }
-	|	IF  OpenIfScope M Statement ELSE N EndScope OpenScope M Statement M {reduceEndScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$5,(M*)$9,(M*)$11,(Statement*)$4,(Statement*)$10); }
-	|	IF  OpenIfScope M Statement M %prec IFPREC {reduceEndScope();$$=assembleIf((Expression*)$2,(M*)$3,(M*)$5,(Statement*)$4); }
+	|	IF  OpenIfScope M Statement ELSE N EndScope OpenScope M Statement M {foldScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$5,(M*)$9,(M*)$11,(Statement*)$4,(Statement*)$10); }
+	|	IF  OpenIfScope M Statement M %prec IFPREC {foldScope();$$=assembleIf((Expression*)$2,(M*)$3,(M*)$5,(Statement*)$4); }
 	|	WHILE M OpenWhileScope M Statement M {$$ = handleWhile((M*) $2,(Expression*)$3,(M*) $4,(Statement*)$5,(M*)$6);}
 	|	BREAK SC	{validateWhile(Break); $$ = jumpFromBreak();}
 	|	CONTINUE SC	{validateWhile(Continue); $$ = jumpFromContinue();}
@@ -164,7 +164,7 @@ OpenIfScope: LPAREN Exp RPAREN  {reduceOpenIfScope((Expression*)$2); $$ = $2;}
 OpenFunctionScope: /*epsilon*/ {reduceOpenFunctionScope();}
 ;
 
-EndScope: /*epsilon*/ {reduceEndScope();}
+EndScope: /*epsilon*/ {foldScope();}
 ;
 
 M: /*epsilon*/ {$$ = new M();}
