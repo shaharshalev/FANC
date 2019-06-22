@@ -180,8 +180,7 @@ N: /*epsilon*/ {$$ = new N();}
 int main(){
     //yydebug=1; // uncomment this inorder to debug
     //freopen ("tests/staff/t29.in","r",stdin);
-    return yyparse();
-    //if(yyparse()!=0) return 1;
+    if(yyparse()!=0) return 1;
     CodeBuffer::instance().printDataBuffer();
     CodeBuffer::instance().printCodeBuffer();
     return 0;
