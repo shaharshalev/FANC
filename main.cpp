@@ -90,8 +90,8 @@ namespace FanC {
             errorMismatch(yylineno);
             exit(1);
         }
-        if (exp != NULL)
-            delete exp;
+        /*if (exp != NULL)
+            delete exp;*/
     }
 
     Call *handleCall(Id *id, ExpressionList *expList) {
@@ -296,7 +296,7 @@ namespace FanC {
         validateExpIsBool(exp);
         symbolTable.push_back(new WhileScope(symbolTable.back()));
         offsets.push_back(offsets.back());
-        delete exp;
+        //delete exp;
     }
 
     void reduceOpenScope() {

@@ -538,7 +538,8 @@ namespace FanC {
         string label;
 
         explicit String(string text) : UnaryExpression(new StringType()), value(text), label("") {
-            label = CodeBuffer::instance().genLabel();
+            //label = CodeBuffer::instance().genLabel();
+            label = assembler.genDataLabel();
             assembler.emitStringToDataForString(label, value);
             registerName = registers.regAlloc();
             assembler.la(registerName, label);
@@ -808,6 +809,7 @@ namespace FanC {
                 assembler.sw(reg, i * WORD_SIZE, "$sp");
                 Registers::getInstance().regFree(reg);
             }
+            assembler.subu("$fp","$sp",WORD_SIZE);//we didnt load the new fp
             assembler.comment("jump to function - " + id->name);
             assembler.jal(id->name);
             assembler.comment("return from functionn  - " + id->name + "restoring the regs");
