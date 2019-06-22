@@ -32,7 +32,7 @@ private:
         for(int i = TEMP_REG_START;i<NUMBER_OF_REG;++i){
             if(names[i] == regName) return i;
         }
-        throw invalid_argument(regName + "does not exist");
+        throw (regName + "does not exist");
     }
 
 public:
