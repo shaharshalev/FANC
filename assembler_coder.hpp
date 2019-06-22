@@ -19,7 +19,7 @@ public:
     }
 
     void emitStringToData(string label,string str){
-         CodeBuffer::instance().emitData(label+" "+".asciiz \""+str+"\"");
+         CodeBuffer::instance().emitData(label+" .asciiz \""+str+"\"");
     }
 
     int lw(string destReg,int offset,string address="($fp)"){
