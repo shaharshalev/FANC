@@ -7,11 +7,12 @@
 #define PRINT_LABEL "print"
 #define PRINTI_LABEL "printi"
 
+#define AFTER_PRECOND_PREFIX_LABEL "after_precond_"
 namespace FanC {
     void reduceProgram();
-    void reduceFuncDecl(Id *id, Statements *statements);
-    void reduceFuncDeclSignature(ReturnType* returnType,Id* id,FormalList* formals);
-    void reducePreConditionsDecl(PreConditions* preconditions);
+    void reduceFuncDecl(FuncDec *funDec, Expression *tempExp, Statements *statements);
+    FuncDec * reduceFuncDeclSignature(ReturnType* returnType, Id* id, FormalList* formals);
+    Expression * reducePreConditionsDecl(PreConditions *preconditions);
     void reduceStatement();
     Statement * handleWhile(M *beforeConditionMarker, Expression *exp, M *beforeStatementMarker, Statement *statement,
                             M *endWhileMarker);

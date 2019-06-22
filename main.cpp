@@ -5,6 +5,9 @@
 #include "registers.hpp"
 #include "bp.hpp"
 #include "assembler_coder.hpp"
+#include "parser.hpp"
+
+#define PRECOND_ERR_LABEL_PREFIX "precond_err_"
 using namespace std;
 
 namespace FanC {
@@ -243,24 +246,29 @@ namespace FanC {
         return a.id != b.id;
     }
 
-    void reduceFuncDecl(Id *id, Statements *statements) {
+    void reduceFuncDecl(FuncDec *funDec, Expression *tempExp, Statements *statements) {
         reduceEndScope();
         AssemblerCoder &assembler = AssemblerCoder::getInstance();
         assembler.addu("$sp","$fp",WORD_SIZE);
-        if(id->name == "main") assembler.exit();
+        if(funDec->id->name == "main") assembler.exit();
         else assembler.jr();
         delete statements;
+        CodeBuffer::instance().bpatch(tempExp->falseList,(string)PRECOND_ERR_LABEL_PREFIX+funDec->id->name);
+        delete tempExp;
+        delete funDec;
     }
 
-    void reduceFuncDeclSignature(ReturnType *returnType, Id *id, FormalList *formals) {
+    FuncDec * reduceFuncDeclSignature(ReturnType *returnType, Id *id, FormalList *formals) {
 
         assertIdentifierNotExists(id);
         checkAndNotifyIfMain(id, formals, returnType);
         FunctionScope *functionScope = dynamic_cast<FunctionScope *>(symbolTable.back());
-        functionScope->updateFunctionScope(new FuncDec(returnType, id, formals, NULL));
+        FuncDec* fun = new FuncDec(returnType, id, formals, NULL);
+        functionScope->updateFunctionScope(fun);
+        return fun;
     }
 
-    void reducePreConditionsDecl(PreConditions *preconditions) {
+    Expression * reducePreConditionsDecl(PreConditions *preconditions) {
 
         Id *i = preconditions->isValid();
         if (i != NULL) {
@@ -269,6 +277,13 @@ namespace FanC {
         }
         FunctionScope *functionScope = dynamic_cast<FunctionScope *>(symbolTable.back());
         functionScope->updateFunctionScope(preconditions);
+        CodeBuffer& codeBuffer =CodeBuffer::instance();
+        Expression* falseExp=new Expression(NULL);
+        for(int i=0;i<preconditions->preconditions.size();i++){
+            PreCondition* preCondition=preconditions->preconditions[i];
+            falseExp->falseList=codeBuffer.merge(falseExp->falseList,preCondition->exp->falseList);
+        }
+        return falseExp;
     }
 
     void reduceFormalDecl(Type *type, Id *id) {
@@ -424,6 +439,36 @@ namespace FanC {
         AssemblerCoder::getInstance().jr();
     }
 
+    void addPreConditionErrorBlock(Id* funcId) {
+        
+        AssemblerCoder& assembler= AssemblerCoder::getInstance();
+        assembler.j(AFTER_PRECOND_PREFIX_LABEL+funcId->name);
+        assembler.addLable((string)PRECOND_ERR_LABEL_PREFIX+funcId->name);
+
+        string errorPrecondLabel="precond_data_error_"+funcId->name;
+        AssemblerCoder::getInstance().emitStringToData(errorPrecondLabel+":"
+                ,"Precondition hasn't been satisfied for function "+funcId->name+"\\n");
+
+
+        string regName = Registers::getInstance().regAlloc();
+        AssemblerCoder::getInstance().la(regName,errorPrecondLabel);
+        /*prepering stack for function print*/
+        AssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE*3); //make space for 3 reg alloc
+        AssemblerCoder::getInstance().sw("$fp",2*WORD_SIZE,"$sp");
+        AssemblerCoder::getInstance().sw("$ra",WORD_SIZE,"$sp");
+        AssemblerCoder::getInstance().sw(regName,0,"$sp");
+        AssemblerCoder::getInstance().subu("$fp","$sp",WORD_SIZE);
+        /*jumping to print function*/
+        Registers::getInstance().regFree(regName);
+        AssemblerCoder::getInstance().jal(PRINT_LABEL);
+        /*restore the reg from stack */
+        AssemblerCoder::getInstance().lw("$ra",WORD_SIZE,"$sp");
+        AssemblerCoder::getInstance().lw("$fp",2*WORD_SIZE,"$sp");
+        AssemblerCoder::getInstance().addu("$sp","$sp",WORD_SIZE*3);
+        AssemblerCoder::getInstance().exitSyscall();
+        assembler.addLable(AFTER_PRECOND_PREFIX_LABEL+funcId->name);
+    }
+
     void initProgramHeader() {
 
         divZeroBody();
@@ -431,6 +476,8 @@ namespace FanC {
         printiBody();
 
     }
+
+
 
     void saveReturnValueInCallRegister(Call *call) {
         call->registerName=Registers::getInstance().regAlloc();
@@ -518,6 +565,8 @@ namespace FanC {
             assembler.addu("$sp","$sp",WORD_SIZE);
         }
         assembler.addLable(id->name);
+
+        addPreConditionErrorBlock(id);
 
     }
 

@@ -59,22 +59,22 @@ Funcs: /*epsilon*/ {}
 	| FuncDecl Funcs	{} 
 ;
 
-FuncDecl:	FuncDeclSignature PreConditionsDecl LBRACE  Statements RBRACE {reduceFuncDecl((Id*)$1,(Statements*)$4);}
+FuncDecl:	FuncDeclSignature PreConditionsDecl LBRACE  Statements RBRACE {reduceFuncDecl((FuncDec*)$1,(Expression*)$2,(Statements*)$4);}
 ;
 
 FuncDeclSignature:OpenFunctionScope RetType ID LPAREN Formals RPAREN  {
      ReturnType* returnType=dynamic_cast<ReturnType*>($2);
      Id* id=dynamic_cast<Id*>($3);
      FormalList* formals=dynamic_cast<FormalList*>($5);
-     reduceFuncDeclSignature(returnType,id,formals);
+     $$ = reduceFuncDeclSignature(returnType,id,formals);
      funDecInAssembly((Id*)$3);
-     $$ = $3;
+
 }
 ;
 
 PreConditionsDecl: PreConditions { /* TODO: */
      PreConditions* preconditions=dynamic_cast<PreConditions*>($1);
-     reducePreConditionsDecl(preconditions);
+     $$=reducePreConditionsDecl(preconditions);
 };
 
 RetType:	Type {$$ = $1;}
@@ -101,7 +101,7 @@ PreConditions:	/*epsilon*/ {$$=new PreConditions();}
 	|	PreConditions PreCondition {$$=reducePreConditions((PreConditions*)$1,(PreCondition*)$2);}
 ;
 
-PreCondition:	PRECOND LPAREN Exp RPAREN {validateExpIsBool((Expression*)$3); $$=new PreCondition((Expression*)$3);}
+PreCondition:	PRECOND LPAREN Exp RPAREN M {validateExpIsBool((Expression*)$3); $$=new PreCondition((Expression*)$3,(M*)$5);}
 ;
 
 Statements: Statement	{$$=new Statements((Statement*)$1);}

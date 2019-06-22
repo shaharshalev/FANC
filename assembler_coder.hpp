@@ -6,7 +6,9 @@
 using namespace std;
 #define WORD_SIZE 4
 #define DIV_BY_ZERO_LABEL "div_by_zero_error"
+
 class AssemblerCoder{
+
 public:
     static AssemblerCoder& getInstance(){
         static AssemblerCoder INSTANCE;
@@ -135,6 +137,14 @@ public:
     void exit(){
         li("$v0",10);
         CodeBuffer::instance().emit("syscall");
+    }
+
+    string genDataLabel(){
+        static int labelCounter=0;
+        labelCounter++;
+        string label="dataLabel_"+to_string(labelCounter);
+        //CodeBuffer::instance().emitData(label+":");
+        return label;
     }
 
 

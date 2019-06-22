@@ -224,7 +224,7 @@ namespace FanC {
 
         explicit Expression(ReturnType *_type) : type(_type), trueList(), falseList(), registerName("") {}
 
-        virtual Id *isPreconditionable() = 0;
+        virtual Id *isPreconditionable(){}
 
         bool isBoolean() {
             return this->type->typeName() == BooleanType().typeName();
@@ -648,8 +648,8 @@ namespace FanC {
     public:
         Expression *exp;
 
-        explicit PreCondition(Expression *_exp) : exp(_exp) {
-
+        explicit PreCondition(Expression *_exp,M* trueMarker) : exp(_exp) {
+                codeBuffer.bpatch(exp->trueList,trueMarker->label);
         }
 
         Id *isExpressionValid() {
