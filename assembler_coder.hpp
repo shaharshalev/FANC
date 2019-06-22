@@ -1,7 +1,5 @@
 #ifndef HW3_ASSEMBLER_CODER_HPP
 #define HW3_ASSEMBLER_CODER_HPP
-
-#include <string>
 #include "bp.hpp"
 using namespace std;
 #define WORD_SIZE 4

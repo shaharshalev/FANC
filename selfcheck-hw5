@@ -1,13 +1,13 @@
 #!/bin/bash
 
-#	link to makefile:
-makefileurl="https://webcourse.cs.technion.ac.il/fc159753hw_236360_201802/hw/WCFiles/makefile"
+#	link to Makefile:
+makefileurl="https://webcourse.cs.technion.ac.il/fc159753hw_236360_201802/hw/WCFiles/Makefile"
 #	link to tests:
-testsurl="https://webcourse.cs.technion.ac.il/fc159753hw_236360_201802/hw/WCFiles/hw3-tests.zip"
+testsurl="https://webcourse.cs.technion.ac.il/fc159753hw_236360_201802/hw/WCFiles/hw5-tests.zip"
+#	link to spim:
+spimurl="https://webcourse.cs.technion.ac.il/fc159753hw_236360_201802/hw/WCFiles/spim.zip"
 #	number of tests:
-numtests=2
-#	command to execute test:
-command="./hw3 < t\$i.in >& t\$i.res"
+numtests=3
 
 hostname="csl3"
 tmpdir="selfcheck_tmp"
@@ -48,9 +48,9 @@ fi
 cd "$tmpdir"
 
 wget --no-check-certificate "$makefileurl" &> /dev/null
-if [ ! -f makefile ]
+if [ ! -f Makefile ]
 	then
-		echo "Unable to download makefile!"
+		echo "Unable to download Makefile!"
 		exit
 fi
 
@@ -62,7 +62,7 @@ if [[ $? != 0 ]]
 fi
 
 wget --no-check-certificate "$testsurl" &> /dev/null
-if [ ! -f makefile ]
+if [ ! -f Makefile ]
 	then
 		echo "Unable to download tests!"
 		exit
@@ -75,10 +75,25 @@ if [[ $? != 0 ]]
 		exit
 fi
 
+wget --no-check-certificate "$spimurl" &> /dev/null
+if [ ! -f Makefile ]
+	then
+		echo "Unable to download spim!"
+		exit
+fi
+
+unzip $( basename "$spimurl" ) &> /dev/null
+if [[ $? != 0 ]] 
+	then
+		echo "Unable to unzip spim!"
+		exit
+fi
+
 i="1"
 while [ $i -le $numtests ]
 	do
-		eval $command
+		./hw5 < t$i.in 2>&1 > t$i.il
+		./spim -file t$i.il > t$i.res
 		diff t$i.res t$i.out &> /dev/null
 		if [[ $? != 0 ]] 
 			then
