@@ -255,7 +255,7 @@ namespace FanC {
         delete statements;
         CodeBuffer::instance().bpatch(tempExp->falseList,(string)PRECOND_ERR_LABEL_PREFIX+funDec->id->name);
         delete tempExp;
-        delete funDec;
+        //delete funDec;
     }
 
     FuncDec * reduceFuncDeclSignature(ReturnType *returnType, Id *id, FormalList *formals) {
@@ -336,7 +336,12 @@ namespace FanC {
         symbolTable.pop_back();
         int numVarsBefore = offsets.back();
         offsets.pop_back();
-        int numVarsAfter = offsets.back();
+        int numVarsAfter;
+        if(offsets.empty())
+            numVarsAfter=0;
+        else
+            numVarsAfter= offsets.back();
+
         currentScope->endScope();
         delete currentScope;
         return numVarsBefore - numVarsAfter;

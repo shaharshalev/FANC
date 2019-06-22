@@ -32,7 +32,8 @@ private:
         for(int i = TEMP_REG_START;i<NUMBER_OF_REG;++i){
             if(names[i] == regName) return i;
         }
-        throw (regName + "does not exist");
+        cout<< "ERROR!!!!!!!!!!!!!!!:"+regName + "does not exist";
+        return -1;
     }
 
 public:
@@ -74,7 +75,7 @@ public:
             if(names[i]==name)
                 bitmap[i]= false;
         }
-        name="";
+        //name="";
     }
 
 };
