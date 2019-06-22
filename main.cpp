@@ -565,12 +565,11 @@ namespace FanC {
 
     void funDecInAssembly(Id* id){
         AssemblerCoder& assembler=AssemblerCoder::getInstance();
+        assembler.addLable(id->name);
         if(id->name == "main"){
             assembler.move("$fp","$sp");
             assembler.addu("$sp","$sp",WORD_SIZE);
         }
-        assembler.addLable(id->name);
-
         addPreConditionErrorBlock(id);
 
     }
