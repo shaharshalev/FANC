@@ -22,6 +22,10 @@ public:
          CodeBuffer::instance().emitData(label+" .asciiz \""+str+"\"");
     }
 
+    void emitStringToDataForString(string label,string str){
+        CodeBuffer::instance().emitData(label+" .asciiz "+str);
+    }
+
     int lw(string destReg,int offset,string address="($fp)"){
         return CodeBuffer::instance().emit("lw "+destReg+", "+to_string(offset)+"("+address+")");
     }

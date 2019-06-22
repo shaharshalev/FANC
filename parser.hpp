@@ -539,7 +539,7 @@ namespace FanC {
 
         explicit String(string text) : UnaryExpression(new StringType()), value(text), label("") {
             label = CodeBuffer::instance().genLabel();
-            assembler.emitStringToData(label, value);
+            assembler.emitStringToDataForString(label, value);
             registerName = registers.regAlloc();
             assembler.la(registerName, label);
 
