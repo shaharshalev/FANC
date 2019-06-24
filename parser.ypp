@@ -179,7 +179,7 @@ N: /*epsilon*/ {$$ = new N();}
 
 int main(){
     //yydebug=1; // uncomment this inorder to debug
-    freopen ("hw5tests/test12.in","r",stdin);
+    freopen ("hw5tests/test14.in","r",stdin);
     if(yyparse()!=0) return 1;
     CodeBuffer::instance().printDataBuffer();
     CodeBuffer::instance().printCodeBuffer();

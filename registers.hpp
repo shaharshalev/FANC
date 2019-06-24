@@ -6,6 +6,8 @@
 #define STORED_REG_START TEMP_REG_END
 #define STORED_REG_END NUMBER_OF_REG
 #include <string>
+extern int yylineno;
+
 using namespace std;
 class Registers{
 private:
@@ -67,7 +69,8 @@ public:
                 return names[i];
             }
         }
-        throw std::bad_alloc(); //all registers are used
+        std::cout << yylineno <<std::endl;
+        throw bad_alloc(); //all registers are used
     }
 
     Registers& regFree(string& name){
