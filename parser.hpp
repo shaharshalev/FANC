@@ -816,7 +816,7 @@ namespace FanC {
             assembler.subu("$fp","$sp",WORD_SIZE);//we didnt load the new fp
             assembler.comment("jump to function - " + id->name);
             assembler.jal(id->name);
-            assembler.comment("return from functionn  - " + id->name + "restoring the regs");
+            assembler.comment("return from functionn  - " + id->name + " restoring the regs");
             assembler.addu("$sp", "$sp", WORD_SIZE * argsSize);
             assembler.lw("$ra", 0, "$sp");
             assembler.lw("$fp", WORD_SIZE, "$sp");

@@ -523,6 +523,7 @@ namespace FanC {
     void jumpToCaller() {
         AssemblerCoder& assembler=AssemblerCoder::getInstance();
         assembler.comment("return from function");
+        assembler.addu("$sp","$fp",WORD_SIZE);
         assembler.jr();
     }
 
