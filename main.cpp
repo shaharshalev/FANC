@@ -485,8 +485,16 @@ namespace FanC {
 
 
     void saveReturnValueInCallRegister(Call *call) {
-        call->registerName=Registers::getInstance().regAlloc();
-        AssemblerCoder::getInstance().move(call->registerName,"$v0");
+        AssemblerCoder& assembler=AssemblerCoder::getInstance();
+        CodeBuffer& codeBuffer=CodeBuffer::instance();
+        if(call->isNumric()) {
+            call->registerName = Registers::getInstance().regAlloc();
+           assembler.move(call->registerName, "$v0");
+        }else if(call->isBoolean()){
+            int bne=assembler.bne("$v0","$0");
+            call->trueList=codeBuffer.makelist(bne);
+            call->falseList=codeBuffer.makelist(assembler.j());
+        }
     }
 
     void handleRegisterInAssignmentDecl(Expression *exp) {
