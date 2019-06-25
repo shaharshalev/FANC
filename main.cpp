@@ -506,7 +506,7 @@ namespace FanC {
 
     void initVariableInStack() {
         AssemblerCoder::getInstance().subu("$sp","$sp",WORD_SIZE);
-        AssemblerCoder::getInstance().sw("$0",0,"$sp");
+        AssemblerCoder::getInstance().sw("$0",0,"$sp");//check if the change works sp to fp
     }
 
     void changeBranchToVar(Expression *exp) {
@@ -587,6 +587,7 @@ namespace FanC {
             M *falseMarker, Statement *statement) {
         CodeBuffer::instance().bpatch(exp->trueList,trueMarker->label);
         CodeBuffer::instance().bpatch(exp->falseList,falseMarker->label);
+        //AssemblerCoder::getInstance().addu("$sp","$fp",WORD_SIZE);//to check
         delete exp;
         delete trueMarker;
         delete falseMarker;

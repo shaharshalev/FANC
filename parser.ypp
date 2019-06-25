@@ -16,12 +16,16 @@
 %right ASSIGN
 %left OR
 %left AND
+%left EQUALITY
+%nonassoc RELATIONAL
+%left ADDITIVE
+%left MULTIPLICATIVE
+%right NOT
 %token VOID
 %token INT
 %token BYTE
 %token B
 %token BOOL
-%right NOT
 %token TRUE
 %token FALSE
 %token RETURN
@@ -39,10 +43,6 @@
 %token ID
 %token NUM
 %token STRING
-%left EQUALITY
-%nonassoc RELATIONAL
-%left ADDITIVE 
-%left MULTIPLICATIVE 
 %token LPAREN
 %token RPAREN
 
@@ -115,8 +115,8 @@ Statement: LBRACE OpenScope Statements RBRACE	{reduceStatement(); $$=assembleSta
 	|	Call SC	{delete $1;$$ = new Statement(); }
 	|	RETURN SC	{validateFunctionReturnType(NULL);jumpToCaller();$$ = new Statement();}
 	|	RETURN Exp SC	{validateFunctionReturnType((Expression*)$2);updateReturnReg((Expression*)$2);jumpToCaller();$$ = new Statement(); }
-	|	IF  OpenIfScope M Statement M ELSE N EndScope OpenScope M Statement M {foldScope();$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$7,(M*)$10,(M*)$12,(Statement*)$4,(Statement*)$11); }
-	|	IF  OpenIfScope M Statement M %prec IFPREC{foldScope();$$=assembleIf((Expression*)$2,(M*)$3,(M*)$5,(Statement*)$4); }
+	|	IF  OpenIfScope M Statement M ELSE N EndScope OpenScope M Statement M {$$=assembleIfElse((Expression*)$2,(M*)$3,(N*)$7,(M*)$10,(M*)$12,(Statement*)$4,(Statement*)$11);foldScope(); }
+	|	IF  OpenIfScope M Statement M %prec IFPREC{$$=assembleIf((Expression*)$2,(M*)$3,(M*)$5,(Statement*)$4);foldScope(); }
 	|	WHILE M OpenWhileScope M Statement M {$$ = handleWhile((M*) $2,(Expression*)$3,(M*) $4,(Statement*)$5,(M*)$6);}
 	|	BREAK SC	{validateWhile(Break); $$ = jumpFromBreak();}
 	|	CONTINUE SC	{validateWhile(Continue); $$ = jumpFromContinue();}
@@ -126,13 +126,16 @@ Call:	ID LPAREN ExpList RPAREN	{$$=handleCall((Id*)$1,(ExpressionList*)$3);}
 	|	ID LPAREN RPAREN	{$$ = handleCall(((Id*)$1),new ExpressionList());}
 ;
 
-ExpList: Exp	{changeBranchToVar((Expression*)$1);$$=new ExpressionList((Expression*)$1);}
-	|	Exp COMMA ExpList	{changeBranchToVar((Expression*)$1);$$=((ExpressionList*)$3)->add((Expression*)$1);}
+ExpList: ExpToVar	{/*changeBranchToVar((Expression*)$1);*/$$=new ExpressionList((Expression*)$1);}
+	|	ExpToVar COMMA ExpList	{/*changeBranchToVar((Expression*)$1);*/$$=((ExpressionList*)$3)->add((Expression*)$1);}
 ;
 
 Type: INT	{$$=new IntType();}
 	| BYTE	{$$=new ByteType();}
 	| BOOL	{$$=new BooleanType();}
+;
+
+ExpToVar: Exp{changeBranchToVar((Expression*)$1);$$=$1;}
 ;
 
 Exp:	LPAREN Exp RPAREN	{$$ = $2;}
@@ -179,7 +182,7 @@ N: /*epsilon*/ {$$ = new N();}
 
 int main(){
     //yydebug=1; // uncomment this inorder to debug
-    //freopen ("hw5tests/test26.in","r",stdin);//26
+    //freopen ("hw5tests/test28.in","r",stdin);//28
     if(yyparse()!=0) return 1;
     CodeBuffer::instance().printDataBuffer();
     CodeBuffer::instance().printCodeBuffer();
