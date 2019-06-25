@@ -847,21 +847,21 @@ namespace FanC {
     private:
 
         void restoreRegs(vector<string> &regs) {
-            /*assembler.comment("restore all used regs");
+            assembler.comment("restore all used regs");
             for (int i = 0; i < regs.size(); i++) {
                 assembler.lw(regs[i], WORD_SIZE * i, "$sp");
-                registers.markAsUsed(regs[i]);
+                //registers.markAsUsed(regs[i]);
             }
-            assembler.addu("$sp", "$sp", regs.size() * WORD_SIZE);*/
+            assembler.addu("$sp", "$sp", regs.size() * WORD_SIZE);
         }
 
         void saveAndFreeRegs(vector<string> &regs) {
-            /*assembler.comment("save all used regs");
+            assembler.comment("save all used regs");
             assembler.subu("$sp", "$sp", regs.size() * WORD_SIZE);
             for (int i = 0; i < regs.size(); i++) {
                 assembler.sw(regs[i], WORD_SIZE * i, "$sp");
-                registers.regFree(regs[i]);
-            }*/
+                //registers.regFree(regs[i]);
+            }
 
         }
     };

@@ -14,12 +14,14 @@
 %}
 
 %right ASSIGN
+%left OR
+%left AND
 %token VOID
 %token INT
 %token BYTE
 %token B
 %token BOOL
-%left NOT
+%right NOT
 %token TRUE
 %token FALSE
 %token RETURN
@@ -37,8 +39,6 @@
 %token ID
 %token NUM
 %token STRING
-%left OR
-%left AND
 %left EQUALITY
 %nonassoc RELATIONAL
 %left ADDITIVE 
@@ -139,7 +139,7 @@ Exp:	LPAREN Exp RPAREN	{$$ = $2;}
 	|	Exp MULTIPLICATIVE Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(BinaryOperation*)$2);}
 	|	Exp ADDITIVE Exp	{$$ = new BinaryExpression((Expression*)$1,(Expression*)$3,(BinaryOperation*)$2);}
 	|	ID		{handleIDExpression((Id*)$1);$$ = (Id*)$1;/*allocate reg*/}
-	|	Call	{$$ = (Call*)$1; saveReturnValueInCallRegister((Call*)$1);/*allocate reg*/ }
+	|	Call	{ saveReturnValueInCallRegister((Call*)$1);$$ = (Call*)$1;/*allocate reg*/ }
 	|	NUM B	{$$ = new Byte((Number*)$1); /*allocate reg*/}
 	|	NUM		{$$ = new Integer((Number*)$1); /*allocate reg*/}
 	|	STRING	{$$ = (String*)$1;  /*allocate reg*/}
@@ -179,7 +179,7 @@ N: /*epsilon*/ {$$ = new N();}
 
 int main(){
     //yydebug=1; // uncomment this inorder to debug
-    freopen ("hw5tests/test14.in","r",stdin);
+    //freopen ("hw5tests/test26.in","r",stdin);//26
     if(yyparse()!=0) return 1;
     CodeBuffer::instance().printDataBuffer();
     CodeBuffer::instance().printCodeBuffer();

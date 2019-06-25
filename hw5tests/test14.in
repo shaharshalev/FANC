@@ -5,7 +5,7 @@ bool isGreater(int x,int y,bool flag)
 {
 	return true;
 }
-void TestFunc(bool flag) 
+void TestFunc(bool flag)
 @pre(not flag)
 {
 	int x=5;
