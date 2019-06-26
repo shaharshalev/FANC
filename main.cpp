@@ -585,8 +585,10 @@ namespace FanC {
 
     Statement* assembleIf(Expression *exp, M *trueMarker,
             M *falseMarker, Statement *statement) {
+        foldScope();
+        string falseLabel = CodeBuffer::instance().genLabel();
         CodeBuffer::instance().bpatch(exp->trueList,trueMarker->label);
-        CodeBuffer::instance().bpatch(exp->falseList,falseMarker->label);
+        CodeBuffer::instance().bpatch(exp->falseList,falseLabel);
         //AssemblerCoder::getInstance().addu("$sp","$fp",WORD_SIZE);//to check
         delete exp;
         delete trueMarker;
@@ -598,8 +600,10 @@ namespace FanC {
     Statement *assembleIfElse(Expression *exp, M *trueMarker, N *skipElse,
             M *falseMarker, M *endIfMarker,Statement *trueStatement,
             Statement *falseStatement) {
+        foldScope();
+        string endScopeLabel = CodeBuffer::instance().genLabel();
         CodeBuffer::instance().bpatch(exp->trueList,trueMarker->label);
-        CodeBuffer::instance().bpatch(skipElse->nextList,endIfMarker->label);
+        CodeBuffer::instance().bpatch(skipElse->nextList,endScopeLabel);
         CodeBuffer::instance().bpatch(exp->falseList,falseMarker->label);
         delete exp;
         delete trueMarker;

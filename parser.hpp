@@ -363,9 +363,11 @@ namespace FanC {
                 BoolOp b = _op->op;
                 switch (b) {
                     case And:
+                        assembler.comment("start-AND backpatching:");
                         codeBuffer.bpatch(leftExp->trueList,beforeRhsMarker->label);
                         this->trueList=rightExp->trueList;
                         this->falseList=codeBuffer.merge(leftExp->falseList,rightExp->falseList);
+                        assembler.comment("end- AND backpatching:");
                         registers.regFree(leftExp->registerName);
                         registers.regFree(rightExp->registerName);
                         break;
