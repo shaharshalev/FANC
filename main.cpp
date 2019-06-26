@@ -583,8 +583,7 @@ namespace FanC {
 
     }
 
-    Statement* assembleIf(Expression *exp, M *trueMarker,
-            M *falseMarker, Statement *statement) {
+    Statement *assembleIf(Expression *exp, M *trueMarker, Statement *statement) {
         foldScope();
         string falseLabel = CodeBuffer::instance().genLabel();
         CodeBuffer::instance().bpatch(exp->trueList,trueMarker->label);
@@ -592,14 +591,12 @@ namespace FanC {
         //AssemblerCoder::getInstance().addu("$sp","$fp",WORD_SIZE);//to check
         delete exp;
         delete trueMarker;
-        delete falseMarker;
         return statement;
 
     }
 
-    Statement *assembleIfElse(Expression *exp, M *trueMarker, N *skipElse,
-            M *falseMarker, M *endIfMarker,Statement *trueStatement,
-            Statement *falseStatement) {
+    Statement *assembleIfElse(Expression *exp, M *trueMarker, N *skipElse, M *falseMarker, Statement *trueStatement,
+                              Statement *falseStatement) {
         foldScope();
         string endScopeLabel = CodeBuffer::instance().genLabel();
         CodeBuffer::instance().bpatch(exp->trueList,trueMarker->label);
@@ -608,7 +605,6 @@ namespace FanC {
         delete exp;
         delete trueMarker;
         delete falseMarker;
-        delete endIfMarker;
         delete skipElse;
 
         //union statements (without the back-patched lists)

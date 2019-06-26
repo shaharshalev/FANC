@@ -87,13 +87,13 @@ namespace FanC {
      * and backpatch the trueList with trueMarker, and falseList with falseMarker
      * @param exp
      * @param trueMarker
-     * @param falseMarker
      * @param statement
      * @return new statement
      */
-    Statement* assembleIf(Expression* exp,M* trueMarker,M* falseMarker,Statement* statement);
+    Statement *assembleIf(Expression *exp, M *trueMarker, Statement *statement);
 
-    Statement* assembleIfElse(Expression* exp,M* trueMarker,N* skipElse,M* falseMarker,M* endIfMarker,Statement* trueStatement,Statement* falseStatement);
+    Statement *assembleIfElse(Expression *exp, M *trueMarker, N *skipElse, M *falseMarker, Statement *trueStatement,
+                              Statement *falseStatement);
 
     void foldScope();
 
